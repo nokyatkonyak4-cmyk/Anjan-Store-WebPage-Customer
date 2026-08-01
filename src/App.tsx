@@ -102,23 +102,22 @@ function AppRouter() {
     );
   }
 
-  if (authLoading) {
-    return <div className="flex min-h-screen items-center justify-center bg-brand-yellow"><div className="animate-pulse font-bold text-2xl text-dark-bg">Loading...</div></div>;
-  }
-
-  if (!user) {
-    return <AuthScreen onLoginSuccess={() => {}} />;
-  }
-
   return (
     <>
-      <Routes>
-        <Route path="/" element={<MainAppScreen />} />
-        <Route path="/static_page/:pageType" element={<StaticPageScreen />} />
-        <Route path="/track_order/:orderId" element={<OrderTrackingScreen />} />
-        <Route path="/digital_bill/:orderId" element={<DigitalBillScreen />} />
-      </Routes>
-      {showSplashOverlay && (
+      {!showSplashOverlay && !authLoading ? (
+        !user ? (
+          <AuthScreen onLoginSuccess={() => {}} />
+        ) : (
+          <Routes>
+            <Route path="/" element={<MainAppScreen />} />
+            <Route path="/static_page/:pageType" element={<StaticPageScreen />} />
+            <Route path="/track_order/:orderId" element={<OrderTrackingScreen />} />
+            <Route path="/digital_bill/:orderId" element={<DigitalBillScreen />} />
+          </Routes>
+        )
+      ) : null}
+
+      {(showSplashOverlay || authLoading) && (
         <SplashScreen onSplashFinished={() => setShowSplashOverlay(false)} />
       )}
     </>

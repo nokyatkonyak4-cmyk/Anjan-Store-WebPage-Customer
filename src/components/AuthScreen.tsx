@@ -81,12 +81,9 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
         <div className="flex justify-center mb-6 hidden md:flex">
           <img src="/AppIcon-512x512.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
         </div>
-        <h1 className="text-2xl font-semibold text-dark-bg mb-2 md:text-center">
+        <h1 className="text-2xl font-semibold text-dark-bg mb-8 md:text-center">
           {isSignUp ? 'Create Account' : 'Welcome Back'}
         </h1>
-        <p className="text-center text-xs text-gray-500 mb-8">
-          Connected to: {import.meta.env.VITE_FIREBASE_PROJECT_ID || 'AI Studio Default Project'}
-        </p>
 
         <form onSubmit={handleAuth} className="w-full flex flex-col space-y-4">
           <div>
