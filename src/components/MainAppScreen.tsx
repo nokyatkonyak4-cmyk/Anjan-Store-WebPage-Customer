@@ -134,83 +134,129 @@ export default function MainAppScreen() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full md:max-w-full lg:max-w-7xl mx-auto bg-light-bg overflow-hidden relative">
-      {/* Top App Bar */}
-      <div className="bg-brand-yellow text-dark-bg flex flex-col sticky top-0 z-20 shadow-md">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden">
+    <div className="flex h-[100dvh] w-full bg-light-bg overflow-hidden">
+      {/* Desktop Sidebar Navigation */}
+      <div className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 z-30 shadow-sm relative">
+        <div className="px-6 py-6 border-b border-gray-100">
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden shrink-0">
               <img src="/AppIcon-512x512.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg leading-tight">Anjan Store</span>
-              <span className="text-[9px] tracking-widest font-semibold uppercase">All in one place</span>
-              <span className="text-[10px] text-gray-500 font-medium">Making your everyday life easier</span>
+              <span className="font-bold text-lg leading-tight text-dark-bg">Anjan Store</span>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <button onClick={() => setSelectedItem('Favorites')}>
-              <Heart size={24} className="text-dark-bg" />
-            </button>
-            <button onClick={() => setSelectedItem('Notifications')} className="relative">
-              <Bell size={24} className="text-dark-bg" />
-              {notifications.filter(n => !n.isRead).length > 0 && (
-                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-[#FFC107] text-[8px] text-white flex items-center justify-center">
-                   {notifications.filter(n => !n.isRead).length}
-                 </span>
-              )}
-            </button>
-            <button onClick={() => setSelectedItem('Profile')} className="w-8 h-8 rounded-full bg-dark-bg text-[#FFC107] flex items-center justify-center font-bold text-sm">
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
-            </button>
-          </div>
+          <span className="text-[10px] text-gray-500 font-medium ml-13">Making your everyday life easier</span>
         </div>
         
-        
+        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+          {bottomNavItems.map((item, index) => {
+            const isSelected = selectedItem === item.title || (item.title === 'Categories' && selectedItem.startsWith('Category_'));
+            return (
+              <button
+                key={`desktop-nav-${index}`}
+                onClick={() => setSelectedItem(item.title)}
+                className={`flex items-center w-full px-4 py-3 rounded-xl transition-all ${isSelected ? 'bg-brand-yellow text-dark-bg font-bold shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-dark-bg font-medium'}`}
+              >
+                <div className="relative mr-3">
+                  <item.icon size={20} className={isSelected ? 'text-dark-bg' : 'text-gray-500'} />
+                  {item.title === 'Cart' && cartItems.length > 0 && (
+                    <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                      {cartItems.reduce((acc, item) => acc + item.quantity, 0)}
+                    </span>
+                  )}
+                </div>
+                <span>{item.title}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto pb-20 scrollbar-hide">
-        {selectedItem === 'Home' && <HomeScreen searchQuery={searchQuery} setSearchQuery={setSearchQuery} onNavigate={setSelectedItem} products={products} categories={categories} banners={banners} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
-        {selectedItem.startsWith('Product_') && <ProductDetailScreen productId={selectedItem.replace('Product_', '')} products={products} onNavigate={setSelectedItem} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
-        {selectedItem === 'Categories' && <CategoriesScreen categories={categories} onNavigate={setSelectedItem} />}
-        {selectedItem.startsWith('Category_') && <CategoryDetailScreen categoryId={selectedItem.replace('Category_', '')} categories={categories} products={products} onNavigate={setSelectedItem} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
-        {selectedItem === 'Cart' && <CartScreen cartItems={cartItems} setCartItems={setCartItems} savedAddress={savedAddress} savedPhone={savedPhone} incrementCart={incrementCart} decrementCart={decrementCart} onNavigate={setSelectedItem} />}
-        {selectedItem === 'Orders' && <OrdersScreen orders={orders} />}
-        {selectedItem === 'Favorites' && <FavoritesScreen products={products} onNavigate={setSelectedItem} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
-        {selectedItem === 'Notifications' && <NotificationsScreen notifications={notifications} onNavigate={setSelectedItem} />}
-        {selectedItem === 'Profile' && <ProfileScreen savedAddress={savedAddress} savedPhone={savedPhone} onNavigate={setSelectedItem} />}
-        {selectedItem === 'OrderHistory' && <OrderHistoryScreen orders={orders} onNavigate={setSelectedItem} />}
-      </div>
-
-      
-
-      {/* Bottom Navigation */}
-      <div className="bg-white border-t border-gray-100 flex justify-around items-center h-[60px] absolute bottom-0 w-full z-20 px-4">
-        {bottomNavItems.map((item, index) => {
-          const isSelected = selectedItem === item.title || (item.title === 'Categories' && selectedItem.startsWith('Category_'));
-          return (
-            <button
-              key={`${item.title}-${index}`}
-              onClick={() => setSelectedItem(item.title)}
-              className={`flex items-center justify-center transition-all duration-300 h-[40px] ${isSelected ? 'bg-dark-bg text-brand-yellow px-4 rounded-full space-x-2' : 'flex-col space-y-1 w-[60px] text-gray-400'}`}
-            >
-              <div className="relative flex items-center justify-center">
-                <item.icon size={20} className={isSelected ? 'text-brand-yellow fill-brand-yellow' : 'text-gray-400'} />
-                {item.title === 'Cart' && cartItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
-                    {cartItems.reduce((acc, item) => acc + item.quantity, 0)}
-                  </span>
-                )}
+      <div className="flex flex-col flex-1 relative min-w-0">
+        {/* Top App Bar (Mobile & Desktop) */}
+        <div className="bg-brand-yellow md:bg-white text-dark-bg flex flex-col sticky top-0 z-20 shadow-md md:shadow-sm md:border-b md:border-gray-100">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center space-x-3 md:hidden">
+              <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden">
+                <img src="/AppIcon-512x512.png" alt="Logo" className="w-full h-full object-contain" />
               </div>
-              {isSelected ? (
-                <span className="text-[12px] font-bold">{item.title}</span>
-              ) : (
-                <span className="text-[10px] font-medium">{item.title}</span>
-              )}
-            </button>
-          );
-        })}
+              <div className="flex flex-col">
+                <span className="font-bold text-lg leading-tight">Anjan Store</span>
+                <span className="text-[9px] tracking-widest font-semibold uppercase">All in one place</span>
+              </div>
+            </div>
+            {/* Desktop header title */}
+            <div className="hidden md:flex items-center">
+              <h1 className="text-xl font-bold text-dark-bg">
+                {selectedItem.startsWith('Product_') ? 'Product Details' : 
+                 selectedItem.startsWith('Category_') ? 'Category' : 
+                 selectedItem}
+              </h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <button onClick={() => setSelectedItem('Favorites')} className="md:hover:bg-gray-100 md:p-2 md:rounded-full transition">
+                <Heart size={24} className="text-dark-bg" />
+              </button>
+              <button onClick={() => setSelectedItem('Notifications')} className="relative md:hover:bg-gray-100 md:p-2 md:rounded-full transition">
+                <Bell size={24} className="text-dark-bg" />
+                {notifications.filter(n => !n.isRead).length > 0 && (
+                   <span className="absolute md:top-1 md:right-1 -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-[#FFC107] md:border-white text-[8px] text-white flex items-center justify-center">
+                     {notifications.filter(n => !n.isRead).length}
+                   </span>
+                )}
+              </button>
+              <button onClick={() => setSelectedItem('Profile')} className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-dark-bg text-[#FFC107] flex items-center justify-center font-bold text-sm md:text-base cursor-pointer shadow-sm hover:opacity-90 transition">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-y-auto pb-20 md:pb-6 scrollbar-hide md:px-4 lg:px-8">
+          <div className="w-full max-w-7xl mx-auto">
+            {selectedItem === 'Home' && <HomeScreen searchQuery={searchQuery} setSearchQuery={setSearchQuery} onNavigate={setSelectedItem} products={products} categories={categories} banners={banners} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
+            {selectedItem.startsWith('Product_') && <ProductDetailScreen productId={selectedItem.replace('Product_', '')} products={products} onNavigate={setSelectedItem} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
+            {selectedItem === 'Categories' && <CategoriesScreen categories={categories} onNavigate={setSelectedItem} />}
+            {selectedItem.startsWith('Category_') && <CategoryDetailScreen categoryId={selectedItem.replace('Category_', '')} categories={categories} products={products} onNavigate={setSelectedItem} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
+            {selectedItem === 'Cart' && <CartScreen cartItems={cartItems} setCartItems={setCartItems} savedAddress={savedAddress} savedPhone={savedPhone} incrementCart={incrementCart} decrementCart={decrementCart} onNavigate={setSelectedItem} />}
+            {selectedItem === 'Orders' && <OrdersScreen orders={orders} />}
+            {selectedItem === 'Favorites' && <FavoritesScreen products={products} onNavigate={setSelectedItem} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
+            {selectedItem === 'Notifications' && <NotificationsScreen notifications={notifications} onNavigate={setSelectedItem} />}
+            {selectedItem === 'Profile' && <ProfileScreen savedAddress={savedAddress} savedPhone={savedPhone} onNavigate={setSelectedItem} />}
+            {selectedItem === 'OrderHistory' && <OrderHistoryScreen orders={orders} onNavigate={setSelectedItem} />}
+          </div>
+        </div>
+
+        {/* Bottom Navigation (Mobile Only) */}
+        <div className="md:hidden bg-white border-t border-gray-100 flex justify-around items-center h-[60px] absolute bottom-0 w-full z-20 px-4">
+          {bottomNavItems.map((item, index) => {
+            const isSelected = selectedItem === item.title || (item.title === 'Categories' && selectedItem.startsWith('Category_'));
+            return (
+              <button
+                key={`${item.title}-${index}`}
+                onClick={() => setSelectedItem(item.title)}
+                className={`flex items-center justify-center transition-all duration-300 h-[40px] ${isSelected ? 'bg-dark-bg text-brand-yellow px-4 rounded-full space-x-2' : 'flex-col space-y-1 w-[60px] text-gray-400'}`}
+              >
+                <div className="relative flex items-center justify-center">
+                  <item.icon size={20} className={isSelected ? 'text-brand-yellow fill-brand-yellow' : 'text-gray-400'} />
+                  {item.title === 'Cart' && cartItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                      {cartItems.reduce((acc, item) => acc + item.quantity, 0)}
+                    </span>
+                  )}
+                </div>
+                {isSelected ? (
+                  <span className="text-[12px] font-bold">{item.title}</span>
+                ) : (
+                  <span className="text-[10px] font-medium">{item.title}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
