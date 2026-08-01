@@ -47,8 +47,14 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
       }
       onLoginSuccess();
     } catch (err: any) {
+      const isDefaultProject = auth.app.options.projectId === 'gen-lang-client-0690213156';
+      
       if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/Password sign-in is not enabled. Please enable it in the Firebase Console -> Authentication -> Sign-in method.');
+        if (isDefaultProject) {
+           setError('Error: The app is currently connected to the AI Studio Default Project instead of your own Firebase project. Please add your VITE_FIREBASE_* environment variables in Vercel to connect to your Firebase project.');
+        } else {
+           setError('Email/Password sign-in is not enabled. Please enable it in the Firebase Console -> Authentication -> Sign-in method.');
+        }
       } else {
         setError(err.message || 'Authentication failed');
       }
@@ -69,7 +75,17 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
       await signInWithPopup(auth, provider);
       onLoginSuccess();
     } catch (err: any) {
-      setError(err.message || 'Google Sign-In failed');
+      const isDefaultProject = auth.app.options.projectId === 'gen-lang-client-0690213156';
+
+      if (err.code === 'auth/unauthorized-domain') {
+        if (isDefaultProject) {
+           setError(`Error: The app is still connected to the AI Studio Default Project. Please add your VITE_FIREBASE_* environment variables in your Vercel Project Settings and redeploy to connect to your own Firebase project.`);
+        } else {
+           setError(`Domain not authorized. Please add "${window.location.hostname}" to your Firebase Console -> Authentication -> Settings -> Authorized domains.`);
+        }
+      } else {
+        setError(err.message || 'Google Sign-In failed');
+      }
     } finally {
       setLoading(false);
     }
