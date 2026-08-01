@@ -345,8 +345,8 @@ function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categor
   }
 
   return (
-    <div className="flex flex-col w-full pb-4 animate-in fade-in pt-4">
-      <div className="px-4 mb-4">
+    <div className="flex flex-col w-full pb-4 animate-in fade-in">
+      <div className="sticky top-0 z-10 bg-light-bg pt-4 pb-2 mb-2 px-4 md:px-0">
         <div className="relative">
           <input 
             type="text" 
