@@ -51,7 +51,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
       
       if (err.code === 'auth/operation-not-allowed') {
         if (isDefaultProject) {
-           setError('Error: The app is currently connected to the AI Studio Default Project instead of your own Firebase project. Please add your VITE_FIREBASE_* environment variables in Vercel to connect to your Firebase project.');
+           setError('Error: The app is currently connected to the default project instead of your own Firebase project. Please add your VITE_FIREBASE_* environment variables to connect to your Firebase project.');
         } else {
            setError('Email/Password sign-in is not enabled. Please enable it in the Firebase Console -> Authentication -> Sign-in method.');
         }
@@ -79,7 +79,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
 
       if (err.code === 'auth/unauthorized-domain') {
         if (isDefaultProject) {
-           setError(`Error: The app is still connected to the AI Studio Default Project. Please add your VITE_FIREBASE_* environment variables in your Vercel Project Settings and redeploy to connect to your own Firebase project.`);
+           setError(`Error: The app is still connected to the default project. Please add your VITE_FIREBASE_* environment variables to connect to your own Firebase project.`);
         } else {
            setError(`Domain not authorized. Please add "${window.location.hostname}" to your Firebase Console -> Authentication -> Settings -> Authorized domains.`);
         }

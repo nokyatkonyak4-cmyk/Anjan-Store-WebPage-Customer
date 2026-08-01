@@ -87,7 +87,7 @@ function AppRouter() {
         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
           <h2 className="text-xl font-bold text-red-600 mb-4">Firebase Configuration Missing</h2>
           <p className="text-gray-700 mb-4 text-sm">
-            Please add your Firebase configuration to the environment variables via the AI Studio Settings menu to continue.
+            Please add your Firebase configuration to the environment variables to continue.
           </p>
           <ul className="text-xs text-left text-gray-500 space-y-2 font-mono bg-gray-50 p-4 rounded-md">
             <li>VITE_FIREBASE_API_KEY</li>
