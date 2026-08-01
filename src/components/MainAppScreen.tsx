@@ -530,11 +530,11 @@ function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categor
       </div>
 
       {/* Watermark */}
-      <div className="flex flex-col items-center justify-center pt-8 pb-32 opacity-20">
-        <span className="text-2xl font-black tracking-widest uppercase mb-1">Anjan Store</span>
-        <span className="text-[10px] font-bold tracking-widest uppercase mb-1">All in one place</span>
-        <span className="text-[10px] text-gray-500 font-medium mb-6">Making your everyday life easier</span>
-        <span className="text-[9px] text-gray-500">crafted by: Nokyat Konyak (NiniBuild)</span>
+      <div className="flex flex-col items-center justify-center pt-10 pb-32 select-none">
+        <span className="text-3xl font-black tracking-[0.2em] uppercase mb-2 text-gray-300">Anjan Store</span>
+        <span className="text-[10px] font-bold tracking-[0.3em] uppercase mb-4 text-gray-300">All in one place</span>
+        <span className="text-base md:text-lg font-bold text-gray-300 mb-8">Making your everyday life easier</span>
+        <span className="text-[10px] text-gray-400 font-medium">crafted by: Nokyat Konyak (NiniBuild)</span>
       </div>
     </div>
   );
@@ -545,12 +545,14 @@ function CategoriesScreen({ categories, onNavigate }: any) {
   const filtered = categories.filter((c:any) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="flex flex-col w-full p-4 animate-in fade-in">
-      <div className="relative mb-6">
-        <input type="text" placeholder="Search categories..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-white rounded-xl py-3 pl-12 pr-4 text-sm shadow-sm outline-none border border-transparent focus:border-[#FFC107]" />
-        <Search size={18} className="absolute left-4 top-3.5 text-gray-400" />
+    <div className="flex flex-col w-full pb-4">
+      <div className="sticky top-0 z-20 bg-light-bg pt-4 pb-4 px-4 mb-4 md:px-0 -mx-4 md:mx-0">
+        <div className="relative px-4 md:px-0">
+          <input type="text" placeholder="Search categories..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-white rounded-xl py-3.5 pl-12 pr-4 text-sm shadow-[0_2px_10px_rgba(0,0,0,0.05)] outline-none border border-gray-100 focus:border-[#FFC107]" />
+          <Search size={18} className="absolute left-8 md:left-4 top-4 text-gray-400" />
+        </div>
       </div>
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5 px-4 md:px-0">
         {filtered.map((cat:any, index:number) => (
           <div key={`${cat.id}-${index}`} onClick={() => onNavigate(`Category_${cat.id}`)} className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-shadow cursor-pointer border border-gray-100 aspect-square group">
             <div className="w-full h-full max-h-[70px] md:max-h-[110px] flex items-center justify-center mb-3">
