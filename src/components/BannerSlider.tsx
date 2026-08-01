@@ -19,8 +19,8 @@ export default function BannerSlider({ slides, autoSlideInterval = 5000 }: Props
   if (!slides || slides.length === 0) return null;
 
   return (
-    <div className="w-full h-[180px] md:h-[250px] px-4 py-2">
-      <div className="relative w-full h-full rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
+    <div className="w-full h-[180px] md:h-[320px] lg:h-[400px] px-4 py-2">
+      <div className="relative w-full h-full rounded-2xl md:rounded-3xl overflow-hidden bg-gray-100 shadow-sm">
         <div 
           className="flex h-full transition-transform duration-500 ease-in-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}

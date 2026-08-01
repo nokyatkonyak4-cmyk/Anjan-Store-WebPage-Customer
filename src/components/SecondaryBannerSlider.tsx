@@ -32,8 +32,8 @@ export default function SecondaryBannerSlider({ slides, autoSlideInterval = 4000
   if (!slides || slides.length === 0) return null;
 
   return (
-    <div className="w-full h-[200px] px-4 py-2">
-      <div className="relative w-full h-full rounded-2xl overflow-hidden bg-gray-300">
+    <div className="w-full h-[200px] md:h-[280px] lg:h-[350px] px-4 py-2">
+      <div className="relative w-full h-full rounded-2xl md:rounded-3xl overflow-hidden bg-gray-300 shadow-sm">
         <div 
           className="flex h-full transition-transform duration-500 ease-in-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
@@ -56,26 +56,26 @@ export default function SecondaryBannerSlider({ slides, autoSlideInterval = 4000
                  />
                  
                  {/* Gradient overlay */}
-                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent pointer-events-none"></div>
+                 <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent pointer-events-none"></div>
                  
                  {/* Content */}
-                 <div className="absolute inset-0 flex flex-col justify-center p-6 pointer-events-none">
+                 <div className="absolute inset-0 flex flex-col justify-center p-6 md:p-10 pointer-events-none">
                    {slide.badgeText && (
-                     <div className="mb-3">
+                     <div className="mb-3 md:mb-4">
                        <span 
-                         style={{ backgroundColor: badgeColor }} 
-                         className="inline-flex items-center justify-center px-3 py-1 rounded-full text-white text-[10px] font-bold tracking-widest uppercase"
+                         style={{ backgroundColor: badgeColor }}
+                         className="inline-flex items-center justify-center px-3 md:px-4 py-1 md:py-1.5 rounded-full text-white text-[10px] md:text-xs font-bold tracking-widest uppercase shadow-sm"
                        >
                          {slide.badgeText}
                        </span>
                      </div>
                    )}
                    
-                   <h3 className="text-white text-2xl font-black mb-2 line-clamp-2">
+                   <h3 className="text-white text-2xl md:text-4xl lg:text-5xl font-black mb-2 md:mb-4 line-clamp-2 drop-shadow-md">
                      {slide.title}
                    </h3>
                    
-                   <p className="text-white/90 text-sm font-medium line-clamp-2 max-w-[70%]">
+                   <p className="text-white/90 text-sm md:text-base lg:text-lg font-medium line-clamp-2 max-w-[80%] md:max-w-[60%] drop-shadow-sm">
                      {slide.subtitle}
                    </p>
                  </div>

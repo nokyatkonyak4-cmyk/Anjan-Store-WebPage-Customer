@@ -345,8 +345,8 @@ function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categor
   }
 
   return (
-    <div className="flex flex-col w-full pb-4 animate-in fade-in">
-      <div className="sticky top-0 z-10 bg-light-bg pt-4 pb-2 mb-2 px-4 md:px-0">
+    <div className="flex flex-col w-full pb-4">
+      <div className="sticky top-0 z-20 bg-light-bg pt-4 pb-2 mb-2 px-4 md:px-0">
         <div className="relative">
           <input 
             type="text" 
@@ -373,26 +373,26 @@ function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categor
       )}
 
       {!searchQuery && categories && categories.length > 0 && (
-        <div className="mb-6 bg-white pt-2 pb-1">
-          <div className="flex justify-between items-center px-4 mb-5">
-            <h2 className="font-bold text-dark-bg text-sm">Shop by Category</h2>
-            <button onClick={() => onNavigate('Categories')} className="text-[#FFC107] font-bold text-xs">See All</button>
+        <div className="mb-8 md:mb-10 bg-transparent pt-2 pb-1">
+          <div className="flex justify-between items-center px-4 md:px-2 mb-5">
+            <h2 className="font-bold text-dark-bg text-sm md:text-xl">Shop by Category</h2>
+            <button onClick={() => onNavigate('Categories')} className="text-[#FFC107] font-bold text-xs md:text-sm hover:underline">See All</button>
           </div>
-          <div className="flex overflow-x-auto px-4 space-x-5 scrollbar-hide pb-2">
+          <div className="flex overflow-x-auto px-4 md:px-2 space-x-5 md:space-x-8 scrollbar-hide pb-4">
             {categories.map((cat:any, index:number) => (
-              <div key={`${cat.id}-${index}`} onClick={() => onNavigate(`Category_${cat.id}`)} className="flex flex-col items-center cursor-pointer shrink-0 w-[64px]">
-                <div className="w-full h-[50px] flex items-center justify-center mb-2">
-                  <img src={cat.imageUrl || cat.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"} alt={cat.name} className="max-w-full max-h-full object-contain" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"; }} />
+              <div key={`${cat.id}-${index}`} onClick={() => onNavigate(`Category_${cat.id}`)} className="flex flex-col items-center cursor-pointer shrink-0 w-[64px] md:w-[96px] group">
+                <div className="w-full h-[50px] md:h-[80px] flex items-center justify-center mb-2 md:mb-3 bg-white shadow-sm md:shadow-sm rounded-xl p-2 group-hover:shadow-md transition-shadow">
+                  <img src={cat.imageUrl || cat.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"} alt={cat.name} className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"; }} />
                 </div>
-                <span className="text-[10px] font-bold text-dark-bg text-center leading-tight">{cat.name}</span>
+                <span className="text-[10px] md:text-sm font-bold text-dark-bg text-center leading-tight">{cat.name}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="px-4">
-        <h2 className="font-bold text-dark-bg text-lg mb-4">{searchQuery ? 'Search Results' : 'Explore All Products'}</h2>
+      <div className="px-4 md:px-2">
+        <h2 className="font-bold text-dark-bg text-lg md:text-xl mb-4 md:mb-6">{searchQuery ? 'Search Results' : 'Explore All Products'}</h2>
         {displayedProducts.length === 0 ? (
           <div className="flex items-center justify-center p-8 text-gray-500">No products found.</div>
         ) : (
@@ -552,11 +552,11 @@ function CategoriesScreen({ categories, onNavigate }: any) {
       </div>
       <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
         {filtered.map((cat:any, index:number) => (
-          <div key={`${cat.id}-${index}`} onClick={() => onNavigate(`Category_${cat.id}`)} className="bg-white rounded-xl p-3 flex flex-col items-center justify-center shadow-sm cursor-pointer border border-gray-50 aspect-square">
-            <div className="w-[60px] h-[60px] bg-gray-50 rounded-full flex items-center justify-center mb-2 p-2">
-              <img src={cat.imageUrl || cat.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"} alt={cat.name} className="w-full h-full object-contain" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"; }} />
+          <div key={`${cat.id}-${index}`} onClick={() => onNavigate(`Category_${cat.id}`)} className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-shadow cursor-pointer border border-gray-100 aspect-square group">
+            <div className="w-full h-full max-h-[70px] md:max-h-[110px] flex items-center justify-center mb-3">
+              <img src={cat.imageUrl || cat.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"} alt={cat.name} className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"; }} />
             </div>
-            <span className="text-[11px] font-medium text-dark-bg text-center line-clamp-2 leading-tight">{cat.name}</span>
+            <span className="text-[11px] md:text-sm font-bold text-dark-bg text-center line-clamp-2 leading-tight">{cat.name}</span>
           </div>
         ))}
       </div>
