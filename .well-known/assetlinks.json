@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target" : {
+    "namespace": "android_app",
+    "package_name": "com.anjanstore.customer",
+    "sha256_cert_fingerprints": ["02:C2:1A:8B:E9:09:6C:AC:0E:20:13:45:56:7B:64:92:13:6E:80:70:90:BA:A3:EC:78:AC:C1:77:A1:00:F8:CD"]
+  }
+}]

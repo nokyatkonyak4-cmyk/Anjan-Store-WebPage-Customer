@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Anjan Store</title>
+  <style>
+    :root {
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-500: #64748b;
+      --slate-900: #0f172a;
+      --green-600: #16a34a;
+      --green-700: #15803d;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--slate-50);
+      color: var(--slate-900);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Splash Screen */
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      background-color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+      transition: opacity 0.5s ease-out, visibility 0.5s;
+    }
+
+    .splash-logo {
+      width: 12rem;
+      max-width: 200px;
+      object-fit: contain;
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .5; }
+    }
+
+    /* Main Content */
+    #main-content {
+      display: none;
+      min-height: 100vh;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .card {
+      background-color: #ffffff;
+      padding: 2.5rem 2rem;
+      border-radius: 1.5rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--slate-100);
+      max-width: 28rem;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    @media (min-width: 768px) {
+      .card {
+        padding: 3rem;
+      }
+    }
+
+    .logo-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      width: 8rem;
+      height: 8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.05));
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      line-height: 2rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin: 0 0 1rem 0;
+      letter-spacing: -0.025em;
+    }
+
+    @media (min-width: 768px) {
+      h1 {
+        font-size: 1.875rem;
+        line-height: 2.25rem;
+      }
+    }
+
+    p {
+      font-size: 1rem;
+      line-height: 1.625;
+      color: var(--slate-500);
+      margin: 0 0 2rem 0;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      width: 100%;
+      background-color: var(--green-600);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 1.125rem;
+      padding: 0.875rem 1.5rem;
+      border-radius: 0.75rem;
+      text-decoration: none;
+      transition: all 0.2s;
+      box-sizing: border-box;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .cta-btn:hover {
+      background-color: var(--green-700);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .cta-btn:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="splash-screen">
+    <img src="app-icon.png.png" alt="Anjan Store Splash" class="splash-logo" />
+  </div>
+
+  <div id="main-content" style="opacity: 0;">
+    <div class="card">
+      <div class="logo-container">
+        <div class="logo">
+          <img src="AppIcon-512x512.png" alt="Anjan Store Logo" />
+        </div>
+      </div>
+      
+      <h1>Welcome to Anjan Store</h1>
+      
+      <p>
+        Your favorite local delivery app. Get groceries, daily essentials, and more delivered directly to your door with blazing speed!
+      </p>
+      
+      <a href="https://play.google.com/store/apps/details?id=com.anjanstore.customer" class="cta-btn">
+        Download our Android App
+      </a>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const splashScreen = document.getElementById('splash-screen');
+      const mainContent = document.getElementById('main-content');
+      
+      mainContent.style.display = 'flex';
+      
+      setTimeout(function() {
+        splashScreen.style.opacity = '0';
+        splashScreen.style.visibility = 'hidden';
+        
+        mainContent.style.transition = 'opacity 0.5s ease-in';
+        mainContent.style.opacity = '1';
+        
+        setTimeout(function() {
+          splashScreen.style.display = 'none';
+        }, 500);
+      }, 2500);
+    });
+  </script>
+</body>
+</html>

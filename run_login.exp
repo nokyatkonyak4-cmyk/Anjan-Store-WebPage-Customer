@@ -1,0 +1,6 @@
+#!/usr/bin/expect -f
+set timeout 10
+spawn npx firebase-tools login --no-localhost
+expect "Allow Firebase to collect CLI and Emulator Suite usage"
+send "n\r"
+expect eof
