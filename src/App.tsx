@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import MainAppScreen from './components/MainAppScreen';
 import StaticPageScreen from './components/StaticPageScreen';
+import CustomerSupportScreen from './components/CustomerSupportScreen';
 import OrderTrackingScreen from './components/OrderTrackingScreen';
 import DigitalBillScreen from './components/DigitalBillScreen';
 import AuthScreen from './components/AuthScreen';
@@ -33,7 +34,7 @@ function AppRouter() {
         
         if (messaging) {
             // Get token and subscribe to topics (mocked on client, typically requires backend)
-            getToken(messaging, { vapidKey: 'YOUR_PUBLIC_VAPID_KEY_HERE' })
+            getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY })
               .then((currentToken) => {
                 if (currentToken) {
                   console.log('FCM Token:', currentToken);
@@ -111,6 +112,7 @@ function AppRouter() {
           <Routes>
             <Route path="/" element={<MainAppScreen />} />
             <Route path="/static_page/:pageType" element={<StaticPageScreen />} />
+            <Route path="/customer-support" element={<CustomerSupportScreen />} />
             <Route path="/track_order/:orderId" element={<OrderTrackingScreen />} />
             <Route path="/digital_bill/:orderId" element={<DigitalBillScreen />} />
           </Routes>

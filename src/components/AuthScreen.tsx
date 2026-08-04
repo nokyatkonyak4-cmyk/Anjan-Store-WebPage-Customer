@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { auth, isFirebaseConfigured } from '../firebase';
+import { motion } from 'motion/react';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   GoogleAuthProvider, 
-  signInWithPopup 
+  signInWithPopup,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 
 export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isResetPassword, setIsResetPassword] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -91,6 +95,95 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isFirebaseConfigured || !auth) {
+      setError('Firebase is not configured.');
+      return;
+    }
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetSent(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (isResetPassword) {
+    return (
+      <div className="flex flex-col min-h-screen w-full bg-brand-yellow items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white/20 md:bg-white md:shadow-xl md:rounded-2xl p-0 md:p-8 rounded-none border-none">
+          <div className="flex justify-center mb-6 hidden md:flex">
+            <img src="/AppIcon-512x512.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
+          </div>
+          <h1 className="text-2xl font-semibold text-dark-bg mb-4 md:text-center">
+            Reset Password
+          </h1>
+          
+          {resetSent ? (
+            <div className="text-center">
+              <p className="text-dark-bg mb-6">
+                If an account exists for {email}, we have sent a password reset link to it.
+              </p>
+              <button 
+                onClick={() => {
+                  setIsResetPassword(false);
+                  setResetSent(false);
+                }}
+                className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl flex justify-center items-center transition-transform active:scale-[0.98] shadow-md"
+              >
+                Return to Login
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="text-dark-bg/80 text-sm mb-8 md:text-center">
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
+              <form onSubmit={handleResetPassword} className="w-full flex flex-col space-y-4">
+                <div>
+                  <label className="block text-dark-bg text-sm mb-1 font-medium">Email</label>
+                  <input 
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white border border-transparent focus:border-dark-bg text-dark-bg rounded-xl px-4 py-3 outline-none shadow-sm transition-colors"
+                    placeholder="your@email.com"
+                  />
+                </div>
+
+                {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
+
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl mt-6 flex justify-center items-center transition-transform active:scale-[0.98] shadow-md"
+                >
+                  {loading ? <Loader2 size={24} className="animate-spin" /> : 'Send Reset Link'}
+                </button>
+              </form>
+              
+              <button 
+                onClick={() => setIsResetPassword(false)}
+                className="w-full mt-5 text-dark-bg text-sm font-semibold hover:underline"
+              >
+                Back to Login
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-brand-yellow items-center justify-center p-6">
       <div className="w-full max-w-md bg-white/20 md:bg-white md:shadow-xl md:rounded-2xl p-0 md:p-8 rounded-none border-none">
@@ -114,7 +207,9 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
           </div>
 
           <div className="relative">
-            <label className="block text-dark-bg text-sm mb-1 font-medium">Password</label>
+            <div className="flex justify-between items-end mb-1">
+              <label className="block text-dark-bg text-sm font-medium">Password</label>
+            </div>
             <input 
               type={passwordVisible ? 'text' : 'password'}
               value={password}
@@ -129,17 +224,30 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
             >
               {passwordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
+
+            {!isSignUp && (
+              <div className="flex justify-end mt-2">
+                <button 
+                  type="button"
+                  onClick={() => setIsResetPassword(true)}
+                  className="text-dark-bg text-xs font-semibold hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
           </div>
 
           {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
 
-          <button 
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
             type="submit"
             disabled={loading}
-            className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl mt-6 flex justify-center items-center transition-transform active:scale-[0.98] shadow-md"
+            className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl mt-6 flex justify-center items-center shadow-md"
           >
             {loading ? <Loader2 size={24} className="animate-spin" /> : (isSignUp ? 'Sign Up' : 'Login')}
-          </button>
+          </motion.button>
         </form>
 
         <button 
@@ -155,14 +263,15 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
           <hr className="flex-1 border-dark-bg/10" />
         </div>
 
-        <button 
+        <motion.button 
+          whileTap={{ scale: 0.95 }}
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full bg-white hover:bg-gray-50 border-2 border-gray-100 text-dark-bg font-bold py-3.5 rounded-xl flex justify-center items-center transition-transform active:scale-[0.98] shadow-sm"
+          className="w-full bg-white hover:bg-gray-50 border-2 border-gray-100 text-dark-bg font-bold py-3.5 rounded-xl flex justify-center items-center shadow-sm"
         >
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5 mr-3" />
           Continue with Google
-        </button>
+        </motion.button>
       </div>
     </div>
   );

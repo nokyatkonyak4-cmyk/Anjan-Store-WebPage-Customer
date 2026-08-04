@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { db, auth, isFirebaseConfigured } from '../firebase';
 import { doc, deleteDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 
@@ -102,7 +103,7 @@ export default function DigitalBillScreen() {
     if (!orderId || !db) return;
     try {
       await updateDoc(doc(db, "orders", orderId), { status: "Approved" });
-      alert("Order Confirmed & Proceed to Payment");
+      alert("Order Confirmed! The delivery rider will collect the payment.");
     } catch (e) {
       console.error(e);
     }
@@ -183,12 +184,13 @@ export default function DigitalBillScreen() {
 
       {order.status === "Pending Approval" && (
          <div className="fixed bottom-0 left-0 right-0 max-w-2xl w-full mx-auto bg-white shadow-[0_-4px_6px_rgba(0,0,0,0.05)] p-4">
-            <button 
+            <motion.button 
+              whileTap={{ scale: 0.95 }}
               onClick={handleProceed}
               className="w-full h-[56px] bg-[#FACC15] text-[#0F172A] rounded-[12px] font-bold text-[16px] flex items-center justify-center"
             >
-               Confirm & Proceed to Payment
-            </button>
+               Confirm Order
+            </motion.button>
          </div>
       )}
     </div>

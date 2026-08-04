@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { Home, Grid, List as ListIcon, ShoppingCart, Search, Heart, Bell, User, ArrowLeft, Plus, Minus, Star, MapPin, Share2, Camera, Mail, Info, Shield, CheckCircle, ChevronRight, Phone, RefreshCcw, Map, Bike, Store, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthScreen from './AuthScreen';
 import { auth, db, isFirebaseConfigured } from '../firebase';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { collection, onSnapshot, query, where, addDoc, doc, setDoc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { seedDatabase } from '../seedData';
 import SecondaryBannerSlider, { CampaignSlide } from './SecondaryBannerSlider';
 import BannerSlider from './BannerSlider';
 
@@ -27,6 +27,8 @@ export default function MainAppScreen() {
   // User Profile
   const [savedAddress, setSavedAddress] = useState('');
   const [savedPhone, setSavedPhone] = useState('');
+
+  const [storeSettings, setStoreSettings] = useState<{supportEmail?: string, supportPhone?: string} | null>(null);
 
   const bottomNavItems = [
     { title: 'Home', icon: Home },
@@ -53,6 +55,13 @@ export default function MainAppScreen() {
     // Listen to Banners
     unsubs.push(onSnapshot(collection(db, 'banners'), (snapshot) => {
       setBanners(snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })).filter(b => b.isActive !== false));
+    }));
+
+    // Listen to Settings
+    unsubs.push(onSnapshot(doc(db, 'settings', 'store'), (docSnap) => {
+      if (docSnap.exists()) {
+        setStoreSettings(docSnap.data() as any);
+      }
     }));
 
     // Listen to Orders
@@ -217,7 +226,7 @@ export default function MainAppScreen() {
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto pb-20 md:pb-6 scrollbar-hide md:px-4 lg:px-8">
           <div className="w-full max-w-7xl mx-auto">
-            {selectedItem === 'Home' && <HomeScreen searchQuery={searchQuery} setSearchQuery={setSearchQuery} onNavigate={setSelectedItem} products={products} categories={categories} banners={banners} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
+            {selectedItem === 'Home' && <HomeScreen searchQuery={searchQuery} setSearchQuery={setSearchQuery} onNavigate={setSelectedItem} products={products} categories={categories} banners={banners} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} storeSettings={storeSettings} />}
             {selectedItem.startsWith('Product_') && <ProductDetailScreen productId={selectedItem.replace('Product_', '')} products={products} onNavigate={setSelectedItem} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
             {selectedItem === 'Categories' && <CategoriesScreen categories={categories} onNavigate={setSelectedItem} />}
             {selectedItem.startsWith('Category_') && <CategoryDetailScreen categoryId={selectedItem.replace('Category_', '')} categories={categories} products={products} onNavigate={setSelectedItem} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
@@ -235,7 +244,8 @@ export default function MainAppScreen() {
           {bottomNavItems.map((item, index) => {
             const isSelected = selectedItem === item.title || (item.title === 'Categories' && selectedItem.startsWith('Category_'));
             return (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.9 }}
                 key={`${item.title}-${index}`}
                 onClick={() => setSelectedItem(item.title)}
                 className={`flex items-center justify-center transition-all duration-300 h-[40px] ${isSelected ? 'bg-dark-bg text-brand-yellow px-4 rounded-full space-x-2' : 'flex-col space-y-1 w-[60px] text-gray-400'}`}
@@ -253,7 +263,7 @@ export default function MainAppScreen() {
                 ) : (
                   <span className="text-[10px] font-medium">{item.title}</span>
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </div>
@@ -264,7 +274,7 @@ export default function MainAppScreen() {
 
 // --- Screens ---
 
-function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categories, banners, favorites, cartItems, toggleFavorite, incrementCart, decrementCart }: any) {
+function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categories, banners, favorites, cartItems, toggleFavorite, incrementCart, decrementCart, storeSettings }: any) {
   const navigate = useNavigate();
   const [selectedOffer, setSelectedOffer] = useState<CampaignSlide | null>(null);
 
@@ -295,13 +305,7 @@ function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categor
     : [...products];
 
   if (!searchQuery) {
-    const muttonIndex = displayedProducts.findIndex((p:any) => p.name.toLowerCase().includes('mutton'));
-    if (muttonIndex !== -1) {
-      displayedProducts.splice(muttonIndex + 1, 0, 
-        { id: 'extra1', name: 'Fresh Salmon', category: 'Meat', price: 850, stockQuantity: 10, rating: 4.7, reviewCount: 50, imageUrl: 'https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?auto=format&fit=crop&q=80&w=300', isActive: true },
-        { id: 'extra2', name: 'Organic Chicken', category: 'Meat', price: 450, stockQuantity: 15, rating: 4.5, reviewCount: 85, imageUrl: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&q=80&w=300', isActive: true }
-      );
-    }
+    // Render all displayed products as is
   }
 
   if (selectedOffer) {
@@ -398,37 +402,8 @@ function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categor
         ) : (
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
             {displayedProducts.map((product:any, index:number) => {
-              // The user specifically requested the secondary banner to be below mutton, headphone and between tablet laptop and mutton headphone.
-              // This logic triggers when it finds 'tablet laptop', 'mutton' or 'headphone', or defaults to index 5.
-              const isTrigger = product.name.toLowerCase().includes('mutton') || product.name.toLowerCase().includes('headphone') || product.name.toLowerCase().includes('tablet');
-              const showBannerHere = isTrigger || index === 5;
-              
-              // Position the secondary banner between "Tablet laptop" and "Mutton Headphone".
-              // We will show it right after "Tablet laptop" if it exists, or before "Mutton Headphone".
-              let finalShowBanner = false;
-              
-              const tabletIndex = displayedProducts.findIndex((p:any) => p.name.toLowerCase().includes('tablet'));
-              
-              let muttonHeadphoneIndex = displayedProducts.findIndex((p:any) => p.name.toLowerCase().includes('mutton'));
-              if (muttonHeadphoneIndex !== -1) {
-                // We added 2 dummy products after mutton, so we want the banner after them to fill the row
-                muttonHeadphoneIndex += 2;
-              } else {
-                muttonHeadphoneIndex = displayedProducts.findIndex((p:any) => p.name.toLowerCase().includes('headphone'));
-              }
-              
-              if (tabletIndex !== -1 && muttonHeadphoneIndex !== -1) {
-                // Determine which one comes first, we want to place it between them. 
-                // So if Tablet is first, we place after Tablet.
-                const firstIndex = Math.min(tabletIndex, muttonHeadphoneIndex);
-                finalShowBanner = index === firstIndex;
-              } else if (tabletIndex !== -1) {
-                finalShowBanner = index === tabletIndex;
-              } else if (muttonHeadphoneIndex !== -1) {
-                finalShowBanner = index === muttonHeadphoneIndex;
-              } else {
-                finalShowBanner = index === 2; // Default to after 3rd item if none found
-              }
+              // Show banner after the 6th item, or after the last item if less than 6 items
+              const finalShowBanner = index === 5 || (displayedProducts.length < 6 && index === displayedProducts.length - 1);
 
               return (
                 <React.Fragment key={`${product.id}-${index}`}>
@@ -515,19 +490,58 @@ function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categor
         <h2 className="font-bold text-dark-bg text-[15px] mb-4">Anjan Store Information</h2>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-50 overflow-hidden">
           {[
-            { text: 'About Us & Socials', path: 'about' },
+            { text: 'About Us', path: 'about-us' },
             { text: 'FAQ', path: 'faq' },
-            { text: 'Customer Support', path: 'contact' },
-            { text: 'Terms & Conditions', path: 'terms' },
-            { text: 'Privacy Policy', path: 'privacy' },
+            { text: 'Customer Support', path: '/customer-support', isAbsolute: true },
+            { text: 'Shipping & Delivery Policy', path: 'shipping-delivery-policy' },
+            { text: 'Terms & Conditions', path: 'terms-conditions' },
+            { text: 'Privacy Policy', path: 'privacy-policy' },
           ].map((item, idx) => (
-            <div key={`${item.text}-${idx}`} onClick={() => navigate(`/static_page/${item.path}`)} className={`flex justify-between items-center px-5 py-4 cursor-pointer ${idx !== 4 ? 'border-b border-gray-50' : ''}`}>
+            <div key={`${item.text}-${idx}`} onClick={() => navigate(item.isAbsolute ? item.path : `/static_page/${item.path}`)} className={`flex justify-between items-center px-5 py-4 cursor-pointer ${idx !== 5 ? 'border-b border-gray-50' : ''}`}>
               <span className="font-bold text-sm text-dark-bg">{item.text}</span>
               <ChevronRight size={16} className="text-gray-400" />
             </div>
           ))}
         </div>
       </div>
+
+      {/* Contact Us / Customer Helpdesk */}
+      {storeSettings && (storeSettings.supportEmail || storeSettings.supportPhone) && (
+        <div className="px-4 mb-10">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-50 p-6 flex flex-col items-center">
+            <h2 className="font-bold text-dark-bg text-lg mb-2">We're here to help!</h2>
+            <p className="text-gray-500 text-sm text-center mb-6">If you have any issues with your order or need assistance, please contact us.</p>
+            
+            <div className="w-full flex flex-col space-y-3 max-w-sm">
+              {storeSettings.supportPhone && (
+                <a href={`https://wa.me/${storeSettings.supportPhone.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || storeSettings.supportPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="w-full py-3 bg-[#4ade80] hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity">
+                  <Phone size={18} />
+                  <span>Chat on WhatsApp</span>
+                </a>
+              )}
+              {storeSettings.supportEmail && (
+                <a href={`mailto:${storeSettings.supportEmail.trim()}`} className="w-full py-3 bg-[#0f172a] hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity">
+                  <Mail size={18} />
+                  <span>Email Support</span>
+                </a>
+              )}
+            </div>
+            
+            {storeSettings.supportPhone && (
+              <div className="mt-6 flex items-center justify-center text-sm text-gray-500 font-medium">
+                <Phone size={16} className="mr-2" />
+                {storeSettings.supportPhone}
+              </div>
+            )}
+            {storeSettings.supportEmail && (
+              <div className="mt-2 flex items-center justify-center text-sm text-gray-500 font-medium">
+                <Mail size={16} className="mr-2" />
+                {storeSettings.supportEmail}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Watermark */}
       <div className="flex flex-col items-center justify-center pt-10 pb-32 select-none">
@@ -734,16 +748,16 @@ function CartScreen({ cartItems, setCartItems, savedAddress, savedPhone, increme
           <span className="font-bold text-lg text-dark-bg">₹{total}</span>
         </div>
         <span className="text-xs text-gray-500 block mb-4">+ Delivery charge calculated at next step</span>
-        <button onClick={() => setShowConfirm(true)} className="w-full bg-brand-yellow text-dark-bg font-bold py-3.5 rounded-xl shadow-sm text-base">
+        <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowConfirm(true)} className="w-full bg-brand-yellow text-dark-bg font-bold py-3.5 rounded-xl shadow-sm text-base">
           Checkout & Request Delivery Quote
-        </button>
+        </motion.button>
       </div>
 
       {showConfirm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
             <h3 className="font-bold text-lg mb-4">Confirm Delivery Request</h3>
-            <div className="space-y-3 mb-4">
+            <div className="space-y-3 mb-6">
               <label className="flex items-center space-x-3 cursor-pointer">
                 <input type="radio" name="delivery" checked={deliveryType === 'Instant delivery'} onChange={() => setDeliveryType('Instant delivery')} className="w-4 h-4 text-brand-yellow focus:ring-brand-yellow" />
                 <span className="text-sm font-medium">⚡ Instant delivery</span>
@@ -757,10 +771,17 @@ function CartScreen({ cartItems, setCartItems, savedAddress, savedPhone, increme
                 <span className="text-sm font-medium">🚚 1 week delivery</span>
               </label>
             </div>
-            <p className="text-xs text-gray-500 mb-6">Our manager will review your location and calculate the delivery charge. You can complete the payment after the final bill is generated.</p>
+            
+            <h4 className="font-bold text-sm mb-2 text-dark-bg">Payment Method</h4>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+              <span className="text-sm font-medium text-dark-bg">Pay on Delivery</span>
+              <div className="w-4 h-4 rounded-full border-4 border-brand-yellow bg-white"></div>
+            </div>
+
+            <p className="text-xs text-gray-500 mb-6">Delivery fees are calculated by the store manager. The final amount will be collected at the time of delivery. You can pay via Cash or Online when you share your 4-digit Delivery PIN with the rider.</p>
             <div className="flex space-x-3">
               <button onClick={() => setShowConfirm(false)} className="flex-1 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-medium">Cancel</button>
-              <button onClick={handleCheckout} className="flex-1 py-2.5 rounded-lg bg-brand-yellow text-dark-bg font-bold">Confirm</button>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={handleCheckout} className="flex-1 py-2.5 rounded-lg bg-brand-yellow text-dark-bg font-bold">Confirm</motion.button>
             </div>
           </div>
         </div>
@@ -894,6 +915,11 @@ function OrderHistoryScreen({ orders, onNavigate }: any) {
                 <div className="flex items-center mb-4">
                   <div className={`w-1.5 h-1.5 rounded-full mr-2 ${order.status === 'Cancelled' ? 'bg-red-500' : 'bg-green-500'}`}></div>
                   <span className={`text-xs font-bold ${order.status === 'Cancelled' ? 'text-red-600' : 'text-green-600'}`}>{order.status || 'Delivered'}</span>
+                  {order.status === "Delivered" && (
+                    <span className="ml-auto text-[10px] text-gray-500 font-medium">
+                      Paid via: {order.paymentMethod || 'Cash'}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-2 mb-4">
@@ -946,6 +972,18 @@ function FavoritesScreen({ products, onNavigate, favorites, cartItems, toggleFav
 }
 
 function NotificationsScreen({ notifications, onNavigate }: any) {
+  const handleNotificationClick = async (notif: any) => {
+    if (!notif.isRead && auth?.currentUser) {
+      try {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid, 'notifications', notif.id), {
+          isRead: true
+        });
+      } catch (e) {
+        console.error("Error marking notification as read:", e);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col w-full p-4 animate-in fade-in">
       <div className="flex items-center mb-6 cursor-pointer" onClick={() => onNavigate('Home')}>
@@ -957,7 +995,11 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
       ) : (
         <div className="space-y-3">
           {notifications.map((notif:any, index:number) => (
-            <div key={`${notif.id}-${index}`} className={`p-4 rounded-xl border ${notif.isRead ? 'bg-white border-gray-100' : 'bg-[#FFF9E6] border-yellow-200'}`}>
+            <div 
+              key={`${notif.id}-${index}`} 
+              onClick={() => handleNotificationClick(notif)}
+              className={`p-4 rounded-xl border cursor-pointer transition-colors ${notif.isRead ? 'bg-white border-gray-100' : 'bg-[#FFF9E6] border-yellow-200 hover:bg-yellow-50'}`}
+            >
               <div className="flex justify-between items-start mb-1">
                 <h4 className="font-bold text-dark-bg text-sm">{notif.title}</h4>
                 {!notif.isRead && <span className="w-2 h-2 rounded-full bg-red-500 mt-1"></span>}
@@ -1038,13 +1080,6 @@ function ProfileScreen({ savedAddress, savedPhone, onNavigate }: any) {
           >
             Logout
           </button>
-
-          <button 
-            onClick={seedDatabase}
-            className="w-full mt-4 border-2 border-gray-300 text-gray-500 font-bold py-3 rounded-lg bg-transparent"
-          >
-            Seed Database (Dev Only)
-          </button>
         </div>
       ) : (
         <form onSubmit={handleSave} className="flex flex-col space-y-4 w-full">
@@ -1076,9 +1111,9 @@ function ProductCard({ product, cartQuantity, isFavorite, onToggleFavorite, onIn
       <div className="relative h-[100px] md:h-[130px] w-full shrink-0 p-3 flex items-center justify-center border-b border-gray-50 cursor-pointer" onClick={() => onProductClick && onProductClick(product)}>
         <img src={product.imageUrl || product.image || "https://images.unsplash.com/photo-1560806887-1e4cd0b6faa6?auto=format&fit=crop&q=80&w=300"} alt={product.name} className="w-full h-full object-contain" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="https://images.unsplash.com/photo-1560806887-1e4cd0b6faa6?auto=format&fit=crop&q=80&w=300"; }} />
       </div>
-      <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm z-10 border border-gray-100">
+      <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm z-10 border border-gray-100">
         <Heart size={14} className={isFavorite ? "fill-[#FFC107] text-[#FFC107]" : "text-gray-400"} />
-      </button>
+      </motion.button>
       <div className="p-2 md:p-3 flex flex-col flex-1 justify-between">
         <div onClick={() => onProductClick && onProductClick(product)} className="cursor-pointer">
           <h3 className="font-bold text-dark-bg text-[11px] md:text-sm line-clamp-1 mb-1">{product.name}</h3>
@@ -1088,14 +1123,14 @@ function ProductCard({ product, cartQuantity, isFavorite, onToggleFavorite, onIn
           <span className="font-bold text-xs md:text-sm text-dark-bg">₹{product.price.toFixed(1)}</span>
           {cartQuantity > 0 ? (
             <div className="flex items-center bg-brand-yellow/20 rounded-md border border-brand-yellow/30">
-              <button onClick={(e) => { e.stopPropagation(); onDecrement(product); }} className="w-6 h-6 flex items-center justify-center text-dark-bg font-bold">-</button>
+              <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); onDecrement(product); }} className="w-6 h-6 flex items-center justify-center text-dark-bg font-bold">-</motion.button>
               <span className="w-5 text-center text-[10px] md:text-xs font-bold text-dark-bg">{cartQuantity}</span>
-              <button onClick={(e) => { e.stopPropagation(); onIncrement(product); }} className="w-6 h-6 flex items-center justify-center text-dark-bg font-bold">+</button>
+              <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); onIncrement(product); }} className="w-6 h-6 flex items-center justify-center text-dark-bg font-bold">+</motion.button>
             </div>
           ) : (
-            <button onClick={(e) => { e.stopPropagation(); onIncrement(product); }} className="bg-white border border-brand-yellow text-brand-yellow text-[10px] md:text-[11px] font-bold px-3 py-1 rounded-md shadow-sm">
+            <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); onIncrement(product); }} className="bg-white border border-brand-yellow text-brand-yellow text-[10px] md:text-[11px] font-bold px-3 py-1 rounded-md shadow-sm">
               ADD
-            </button>
+            </motion.button>
           )}
         </div>
       </div>

@@ -8,6 +8,7 @@
         "@tailwindcss/vite": "^4.3.3",
         "firebase": "^12.17.0",
         "lucide-react": "^1.28.0",
+        "motion": "^12.43.0",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "react-router-dom": "^7.18.2",
@@ -253,6 +254,8 @@
 
     "firebase": ["firebase@12.17.0", "", { "dependencies": { "@firebase/ai": "2.14.0", "@firebase/analytics": "0.10.23", "@firebase/analytics-compat": "0.2.29", "@firebase/app": "0.16.0", "@firebase/app-check": "0.13.0", "@firebase/app-check-compat": "0.4.6", "@firebase/app-compat": "0.5.16", "@firebase/app-types": "0.9.5", "@firebase/auth": "1.13.4", "@firebase/auth-compat": "0.6.9", "@firebase/data-connect": "0.7.2", "@firebase/database": "1.1.4", "@firebase/database-compat": "2.1.5", "@firebase/firestore": "4.17.0", "@firebase/firestore-compat": "0.4.12", "@firebase/functions": "0.13.6", "@firebase/functions-compat": "0.4.6", "@firebase/installations": "0.6.23", "@firebase/installations-compat": "0.2.23", "@firebase/messaging": "0.13.1", "@firebase/messaging-compat": "0.2.28", "@firebase/performance": "0.7.13", "@firebase/performance-compat": "0.2.26", "@firebase/remote-config": "0.9.1", "@firebase/remote-config-compat": "0.2.28", "@firebase/storage": "0.14.4", "@firebase/storage-compat": "0.4.4", "@firebase/util": "1.15.2" } }, "sha512-8iENFg2/k7asnybijN3ZrmTag0BuyiihUXrRZkX+yCW+YocknpzPZ4DUkdbyA/rdrdaCssBqHH8zpdDliv+4ng=="],
 
+    "framer-motion": ["framer-motion@12.43.0", "", { "dependencies": { "motion-dom": "^12.43.0", "motion-utils": "^12.39.0", "tslib": "^2.4.0" }, "peerDependencies": { "@emotion/is-prop-valid": "*", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["@emotion/is-prop-valid", "react", "react-dom"] }, "sha512-1eaL3RvR/kAlbG7UYcpMptEyzPoENO0c6w7ZnB3/hh2vSAz/6uGAFn6fdoqTBguNstf3MsFhJHsD/0DHiclG+g=="],
+
     "fsevents": ["fsevents@2.3.3", "", { "os": "darwin" }, "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw=="],
 
     "get-caller-file": ["get-caller-file@2.0.5", "", {}, "sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg=="],
@@ -280,6 +283,12 @@
     "lucide-react": ["lucide-react@1.28.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-fARAFJULsGuDDydjp6+6blekG/sBIM29TerzLjc9bQUKAcEfrSc4ZQKb25KRz4OMKd87cZTb5dgq0w/T6KufVg=="],
 
     "magic-string": ["magic-string@0.30.21", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5" } }, "sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ=="],
+
+    "motion": ["motion@12.43.0", "", { "dependencies": { "framer-motion": "^12.43.0", "tslib": "^2.4.0" }, "peerDependencies": { "@emotion/is-prop-valid": "*", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["@emotion/is-prop-valid", "react", "react-dom"] }, "sha512-BQgQbSa9Hn3/mtbib0MK53y6JSANa+YKUKlaYnWzAVDH424RYQ5LVpV3pNiWH00BA2z4ojsSdMzqT7g2FQwjuQ=="],
+
+    "motion-dom": ["motion-dom@12.43.0", "", { "dependencies": { "motion-utils": "^12.39.0" } }, "sha512-azKON4d9S65PEoFUiQTMTgPheEmzf2QngdRc50AKfJp9Q9mmcBVw22c8eMq9k8kxOFHdL7+WZY7N/5F/lwiDag=="],
+
+    "motion-utils": ["motion-utils@12.39.0", "", {}, "sha512-8nadJAJjTtqRkmRF36FoJTrywK9nnFmnPwnSMyxaOCU7GDjN9RTMJIxx9De8ErM+vpPhMccr/6fo5WciyQLnMQ=="],
 
     "nanoid": ["nanoid@3.3.16", "", { "bin": "bin/nanoid.cjs" }, ""],
 

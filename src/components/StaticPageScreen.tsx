@@ -8,83 +8,39 @@ export default function StaticPageScreen() {
   const { pageType = '' } = useParams<{ pageType: string }>();
   const navigate = useNavigate();
 
-  const getDefaultData = (type: string) => {
-    switch (type) {
-      case 'about':
-        return {
-          title: "About Us & Socials",
-          content: "Welcome to Anjan Store!\n\nWe are your one-stop shop for all your daily needs, providing fresh groceries, essentials, and much more right to your doorstep.\n\nFollow us on social media:\nInstagram: @anjanstore\nFacebook: facebook.com/anjanstore\nTwitter: @anjanstore"
-        };
-      case 'faq':
-        return {
-          title: "FAQ",
-          content: "Frequently Asked Questions\n\nQ: What are your delivery hours?\nA: We deliver from 9:00 AM to 9:00 PM.\n\nQ: Do you offer same-day delivery?\nA: Yes, orders placed before 6:00 PM are delivered the same day.\n\nQ: What payment methods do you accept?\nA: We accept Cash on Delivery, Credit/Debit Cards, and UPI."
-        };
-      case 'privacy':
-        return {
-          title: "Privacy Policy",
-          content: "Privacy Policy\n\nAt Anjan Store, we are committed to protecting your privacy and ensuring you have a positive experience on our application.\n\n1. Data Collection and Usage\nWe collect personal information such as your name, email address, phone number, and delivery address when you register and place an order. This information is used strictly to process your orders, deliver products, and improve our services.\n\n2. Location Information\nOur app requests access to your location (approximate and precise) to help you accurately pinpoint your delivery address. This location data is only used during the address selection process to ensure accurate and timely delivery of your orders. We do not track your location in the background or share it with third parties for marketing.\n\n3. Account & Data Deletion\nYou have the right to request the deletion of your account and associated personal data at any time. To delete your account, contact our support team at support@anjanstore.com with your registered email. Upon request, we will delete your personal data, subject to any legal obligations to retain certain information.\n\n4. Third-Party Services\nWe use trusted third-party services (such as Google Firebase) for authentication, database storage, and push notifications. We do not sell, rent, or trade your personal information to third parties.\n\n5. Children's Privacy\nOur services are not directed to individuals under the age of 13. We do not knowingly collect personal information from children under 13.\n\n6. Security\nWe implement industry-standard security measures to safeguard your personal data.\n\nBy using our app, you consent to this Privacy Policy."
-        };
-      case 'terms':
-        return {
-          title: "Terms & Conditions",
-          content: "Terms & Conditions\n\nWelcome to Anjan Store. By using our app, you agree to comply with the following terms:\n\n1. General Use\nThe content and products provided are for personal use. You must not use our app for any illegal or unauthorized purpose.\n\n2. Product Information & Pricing\nWe strive to ensure all product descriptions and prices are accurate. However, errors may occur, and we reserve the right to correct them or cancel orders based on incorrect information.\n\n3. Purchases\nAll purchases made through the app are subject to availability. We reserve the right to limit quantities or discontinue products at any time.\n\n4. Liability\nAnjan Store shall not be liable for any direct, indirect, incidental, or consequential damages arising from the use of our services or products.\n\n5. Changes to Terms\nWe may update these terms periodically. Continued use of the app constitutes acceptance of the new terms."
-        };
-      case 'refund':
-        return {
-          title: "Refund & Cancellation Policy",
-          content: "Refund & Cancellation Policy\n\n1. Order Cancellation\nYou can cancel your order at any time before it is dispatched for delivery. To cancel an order, navigate to \"My Orders\" and select the cancel option, or contact our support team immediately. Once an order is dispatched, it cannot be cancelled.\n\n2. Refunds for Cancellations\nIf you cancel an order before dispatch, any payments made will be fully refunded to your original payment method within 5-7 business days.\n\n3. Returns & Refunds\nIf you receive a defective or incorrect item, please contact us within 24 hours of delivery. We will arrange a replacement or process a refund upon verification. Perishable goods cannot be returned unless they are defective upon delivery.\n\n4. Processing Refunds\nApproved refunds are processed back to the original method of payment. Depending on your bank, it may take several business days for the refund to reflect in your account."
-        };
-      case 'contact':
-        return {
-          title: "Contact Us",
-          content: "Contact Us\n\nWe are here to help! If you have any questions, concerns, or feedback, please reach out to us through the following channels:\n\nEmail:\nsupport@anjanstore.com\n\nPhone Number:\n+91 98765 43210\n\nPhysical Store Address:\nAnjan Store\n123 Market Street,\nCity Center,\nState - 123456\n\nOperating Hours:\nMonday to Saturday: 9:00 AM - 9:00 PM\nSunday: 10:00 AM - 6:00 PM"
-        };
-      default:
-        return {
-          title: "Page Not Found",
-          content: "The requested content is not available."
-        };
-    }
-  };
-
-  const defaultData = getDefaultData(pageType);
-  const [title, setTitle] = useState(defaultData.title);
-  const [content, setContent] = useState(defaultData.content);
-  const [isLoading, setIsLoading] = useState(false);
+  const [content, setContent] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    let isMounted = true;
-    
-    // Set default data first so we don't show an empty page
-    const data = getDefaultData(pageType);
-    setTitle(data.title);
-    setContent(data.content);
-    
-    const fetchPageData = async () => {
+    const fetchPage = async () => {
+      setLoading(true);
       try {
-        if (db) {
-          if (!pageType) return;
-          const docRef = doc(db, 'static_pages', pageType);
-          const docSnap = await getDoc(docRef);
-          
-          if (docSnap.exists() && isMounted) {
-            const remoteData = docSnap.data();
-            if (remoteData.title) setTitle(remoteData.title);
-            if (remoteData.content) setContent(remoteData.content);
-          }
+        const docRef = doc(db, 'staticPages', pageType);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          setContent(docSnap.data().content || 'Content coming soon...');
+          setTitle(docSnap.data().title || formatTitle(pageType));
+        } else {
+          setContent('Content coming soon...');
+          setTitle(formatTitle(pageType));
         }
       } catch (error) {
-        // Silently ignore permissions errors since we have default data fallback
+        console.error("Failed to load page content", error);
+        setContent('Failed to load content.');
+        setTitle(formatTitle(pageType));
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchPageData();
-
-    return () => {
-      isMounted = false;
-    };
+    fetchPage();
   }, [pageType]);
+
+  const formatTitle = (path: string) => {
+    return path.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
 
   return (
     <div className="flex flex-col min-h-screen max-w-2xl w-full mx-auto bg-light-bg shadow-2xl relative animate-in slide-in-from-right">
@@ -96,14 +52,15 @@ export default function StaticPageScreen() {
       </div>
       
       <div className="flex-1 p-6 overflow-y-auto">
-        {isLoading ? (
+        {loading ? (
           <div className="flex items-center justify-center h-full min-h-[200px]">
              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark-bg"></div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm p-6 whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
-            {content}
-          </div>
+          <div 
+            className="bg-white rounded-xl shadow-sm p-6 whitespace-pre-wrap text-sm text-gray-700 leading-relaxed static-content"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
         )}
       </div>
     </div>
