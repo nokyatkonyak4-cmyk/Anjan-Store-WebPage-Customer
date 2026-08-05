@@ -1,34 +1,27 @@
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging } from 'firebase/messaging';
 import { getStorage } from 'firebase/storage';
 import fallbackConfig from '../firebase-applet-config.json';
 
-const envConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || fallbackConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || fallbackConfig.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || fallbackConfig.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || fallbackConfig.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || fallbackConfig.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || fallbackConfig.appId,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || fallbackConfig.measurementId,
 };
 
-// Use environment variables if API Key is present, otherwise use fallback config
-const useEnv = !!envConfig.apiKey;
-const firebaseConfig = useEnv ? envConfig : fallbackConfig;
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-const isFirebaseConfigured = !!firebaseConfig.apiKey;
+const isCustomProject = import.meta.env.VITE_FIREBASE_PROJECT_ID && import.meta.env.VITE_FIREBASE_PROJECT_ID !== fallbackConfig.projectId;
+const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || (isCustomProject ? '(default)' : fallbackConfig.firestoreDatabaseId);
 
-const app = isFirebaseConfigured 
-  ? (!getApps().length ? initializeApp(firebaseConfig) : getApp())
-  : null;
-
-export const db = app ? (useEnv ? getFirestore(app) : getFirestore(app, (fallbackConfig as any).firestoreDatabaseId)) : null as any;
-export const auth = app ? getAuth(app) : null as any;
-
-export const messaging = app && typeof window !== 'undefined' ? getMessaging(app) : null as any;
-export const storage = app ? getStorage(app) : null as any;
-
-// Make isFirebaseConfigured available for exports
-export { isFirebaseConfigured };
+export const db = getFirestore(app, databaseId);
+export const auth = getAuth(app);
+export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null as any;
+export const storage = getStorage(app);
+export const isFirebaseConfigured = true;
