@@ -3,9 +3,10 @@ import { motion } from 'motion/react';
 import { Home, Grid, List as ListIcon, ShoppingCart, Search, Heart, Bell, User, ArrowLeft, Plus, Minus, Star, MapPin, Share2, Camera, Mail, Info, Shield, CheckCircle, ChevronRight, Phone, RefreshCcw, Map, Bike, Store, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthScreen from './AuthScreen';
-import { auth, db, isFirebaseConfigured } from '../firebase';
+import { auth, db, storage, isFirebaseConfigured } from '../firebase';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { collection, onSnapshot, query, where, addDoc, doc, setDoc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import SecondaryBannerSlider, { CampaignSlide } from './SecondaryBannerSlider';
 import BannerSlider from './BannerSlider';
 
@@ -27,8 +28,9 @@ export default function MainAppScreen() {
   // User Profile
   const [savedAddress, setSavedAddress] = useState('');
   const [savedPhone, setSavedPhone] = useState('');
+  const [profileImage, setProfileImage] = useState('');
 
-  const [storeSettings, setStoreSettings] = useState<{supportEmail?: string, supportPhone?: string} | null>(null);
+  const [storeSettings, setStoreSettings] = useState<{supportEmail?: string, supportPhone?: string, supportWhatsapp?: string} | null>(null);
 
   const bottomNavItems = [
     { title: 'Home', icon: Home },
@@ -99,6 +101,7 @@ export default function MainAppScreen() {
         setFavorites(data.favorites || []);
         setSavedAddress(data.address || '');
         setSavedPhone(data.whatsappNumber || '');
+        setProfileImage(data.profileImage || '');
         if (data.cartItems) {
           setCartItems(data.cartItems);
         }
@@ -145,17 +148,17 @@ export default function MainAppScreen() {
   return (
     <div className="flex h-[100dvh] w-full bg-light-bg overflow-hidden">
       {/* Desktop Sidebar Navigation */}
-      <div className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 z-30 shadow-sm relative">
-        <div className="px-6 py-6 border-b border-gray-100">
+      <div className="hidden md:flex flex-col w-64 bg-brand-yellow border-r border-brand-yellow/20 z-30 shadow-sm relative">
+        <div className="px-6 py-6 border-b border-brand-yellow/20">
           <div className="flex items-center space-x-3 mb-2">
-            <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
               <img src="/AppIcon-512x512.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg leading-tight text-dark-bg">Anjan Store</span>
             </div>
           </div>
-          <span className="text-[10px] text-gray-500 font-medium ml-13">Making your everyday life easier</span>
+          <span className="text-[10px] text-dark-bg/80 font-medium ml-13">Making your everyday life easier</span>
         </div>
         
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
@@ -165,10 +168,10 @@ export default function MainAppScreen() {
               <button
                 key={`desktop-nav-${index}`}
                 onClick={() => setSelectedItem(item.title)}
-                className={`flex items-center w-full px-4 py-3 rounded-xl transition-all ${isSelected ? 'bg-brand-yellow text-dark-bg font-bold shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-dark-bg font-medium'}`}
+                className={`flex items-center w-full px-4 py-3 rounded-xl transition-all ${isSelected ? 'bg-white text-dark-bg font-bold shadow-sm' : 'text-dark-bg/80 hover:bg-white/50 hover:text-dark-bg font-medium'}`}
               >
                 <div className="relative mr-3">
-                  <item.icon size={20} className={isSelected ? 'text-dark-bg' : 'text-gray-500'} />
+                  <item.icon size={20} className={isSelected ? 'text-dark-bg' : 'text-dark-bg/80'} />
                   {item.title === 'Cart' && cartItems.length > 0 && (
                     <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
                       {cartItems.reduce((acc, item) => acc + item.quantity, 0)}
@@ -184,7 +187,7 @@ export default function MainAppScreen() {
 
       <div className="flex flex-col flex-1 relative min-w-0">
         {/* Top App Bar (Mobile & Desktop) */}
-        <div className="bg-brand-yellow md:bg-white text-dark-bg flex flex-col sticky top-0 z-20 shadow-md md:shadow-sm md:border-b md:border-gray-100">
+        <div className="bg-brand-yellow text-dark-bg flex flex-col sticky top-0 z-20 shadow-md md:shadow-sm md:border-b md:border-brand-yellow/20">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-3 md:hidden">
               <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden">
@@ -205,13 +208,13 @@ export default function MainAppScreen() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <button onClick={() => setSelectedItem('Favorites')} className="md:hover:bg-gray-100 md:p-2 md:rounded-full transition">
+              <button onClick={() => setSelectedItem('Favorites')} className="md:hover:bg-white/50 md:p-2 md:rounded-full transition">
                 <Heart size={24} className="text-dark-bg" />
               </button>
-              <button onClick={() => setSelectedItem('Notifications')} className="relative md:hover:bg-gray-100 md:p-2 md:rounded-full transition">
+              <button onClick={() => setSelectedItem('Notifications')} className="relative md:hover:bg-white/50 md:p-2 md:rounded-full transition">
                 <Bell size={24} className="text-dark-bg" />
                 {notifications.filter(n => !n.isRead).length > 0 && (
-                   <span className="absolute md:top-1 md:right-1 -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-[#FFC107] md:border-white text-[8px] text-white flex items-center justify-center">
+                   <span className="absolute md:top-1 md:right-1 -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-brand-yellow text-[8px] text-white flex items-center justify-center">
                      {notifications.filter(n => !n.isRead).length}
                    </span>
                 )}
@@ -234,7 +237,7 @@ export default function MainAppScreen() {
             {selectedItem === 'Orders' && <OrdersScreen orders={orders} />}
             {selectedItem === 'Favorites' && <FavoritesScreen products={products} onNavigate={setSelectedItem} favorites={favorites} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
             {selectedItem === 'Notifications' && <NotificationsScreen notifications={notifications} onNavigate={setSelectedItem} />}
-            {selectedItem === 'Profile' && <ProfileScreen savedAddress={savedAddress} savedPhone={savedPhone} onNavigate={setSelectedItem} />}
+            {selectedItem === 'Profile' && <ProfileScreen savedAddress={savedAddress} savedPhone={savedPhone} profileImage={profileImage} onNavigate={setSelectedItem} />}
             {selectedItem === 'OrderHistory' && <OrderHistoryScreen orders={orders} onNavigate={setSelectedItem} />}
           </div>
         </div>
@@ -513,32 +516,55 @@ function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categor
             <p className="text-gray-500 text-sm text-center mb-6">If you have any issues with your order or need assistance, please contact us.</p>
             
             <div className="w-full flex flex-col space-y-3 max-w-sm">
-              {storeSettings.supportPhone && (
-                <a href={`https://wa.me/${storeSettings.supportPhone.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || storeSettings.supportPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="w-full py-3 bg-[#4ade80] hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity">
+              {(storeSettings.supportWhatsapp || storeSettings.supportPhone) && (
+                <a href={`https://wa.me/${(storeSettings.supportWhatsapp || storeSettings.supportPhone).match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || (storeSettings.supportWhatsapp || storeSettings.supportPhone).replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="w-full py-3 bg-[#4ade80] hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity">
                   <Phone size={18} />
                   <span>Chat on WhatsApp</span>
                 </a>
               )}
+              {storeSettings.supportPhone && (
+                <a href={`tel:${storeSettings.supportPhone.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || storeSettings.supportPhone.replace(/\D/g, '')}`}  className="w-full py-3 bg-blue-600 hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity">
+                  <Phone size={18} />
+                  <span>Call Us</span>
+                </a>
+              )}
               {storeSettings.supportEmail && (
-                <a href={`mailto:${storeSettings.supportEmail.trim()}`} className="w-full py-3 bg-[#0f172a] hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity">
+                <a href={`mailto:${storeSettings.supportEmail.trim()}`}  className="w-full py-3 bg-[#0f172a] hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity">
                   <Mail size={18} />
                   <span>Email Support</span>
                 </a>
               )}
             </div>
             
-            {storeSettings.supportPhone && (
-              <div className="mt-6 flex items-center justify-center text-sm text-gray-500 font-medium">
-                <Phone size={16} className="mr-2" />
-                {storeSettings.supportPhone}
-              </div>
-            )}
-            {storeSettings.supportEmail && (
-              <div className="mt-2 flex items-center justify-center text-sm text-gray-500 font-medium">
-                <Mail size={16} className="mr-2" />
-                {storeSettings.supportEmail}
-              </div>
-            )}
+            <div className="mt-6 flex flex-col space-y-2 text-center items-center justify-center">
+              {storeSettings.supportWhatsapp && (
+                <div className="flex items-center justify-center text-sm text-gray-500 font-medium">
+                  <Phone size={16} className="mr-2" />
+                  <span>WhatsApp:&nbsp;</span>
+                  <a href={`https://wa.me/${storeSettings.supportWhatsapp.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || storeSettings.supportWhatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-dark-bg transition-colors font-semibold">
+                    {storeSettings.supportWhatsapp}
+                  </a>
+                </div>
+              )}
+              {storeSettings.supportPhone && storeSettings.supportPhone !== storeSettings.supportWhatsapp && (
+                <div className="flex items-center justify-center text-sm text-gray-500 font-medium">
+                  <Phone size={16} className="mr-2" />
+                  <span>Phone:&nbsp;</span>
+                  <a href={`tel:${storeSettings.supportPhone.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || storeSettings.supportPhone.replace(/\D/g, '')}`}  className="hover:text-dark-bg transition-colors font-semibold">
+                    {storeSettings.supportPhone}
+                  </a>
+                </div>
+              )}
+              {storeSettings.supportEmail && (
+                <div className="flex items-center justify-center text-sm text-gray-500 font-medium">
+                  <Mail size={16} className="mr-2" />
+                  <span>Email:&nbsp;</span>
+                  <a href={`mailto:${storeSettings.supportEmail.trim()}`}  className="hover:text-dark-bg transition-colors font-semibold">
+                    {storeSettings.supportEmail}
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1014,7 +1040,7 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
   );
 }
 
-function ProfileScreen({ savedAddress, savedPhone, onNavigate }: any) {
+function ProfileScreen({ savedAddress, savedPhone, profileImage, onNavigate }: any) {
   const user = auth?.currentUser;
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
@@ -1022,6 +1048,8 @@ function ProfileScreen({ savedAddress, savedPhone, onNavigate }: any) {
   const [phone, setPhone] = useState(savedPhone);
   const [address, setAddress] = useState(savedAddress);
   const [loading, setLoading] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [imageUploadLoading, setImageUploadLoading] = useState(false);
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -1047,12 +1075,63 @@ function ProfileScreen({ savedAddress, savedPhone, onNavigate }: any) {
     }
   };
 
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser");
+        return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+            const { latitude, longitude } = position.coords;
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+            const data = await res.json();
+            if (data && data.display_name) {
+                setAddress(data.display_name);
+            } else {
+                alert("Could not fetch address details.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error fetching address.");
+        } finally {
+            setIsLocating(false);
+        }
+    }, (error) => {
+        console.error(error);
+        alert("Unable to retrieve your location");
+        setIsLocating(false);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !user || !storage) return;
+    const file = e.target.files[0];
+    setImageUploadLoading(true);
+    try {
+      const storageRef = ref(storage, `users/${user.uid}/profile_${Date.now()}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      await setDoc(doc(db, 'users', user.uid), { profileImage: url }, { merge: true });
+      await updateProfile(user, { photoURL: url });
+    } catch (error) {
+      console.error(error);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setImageUploadLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col w-full p-4 items-center animate-in fade-in pb-24 max-w-2xl w-full mx-auto">
       {!isEditing ? (
         <div className="flex flex-col items-center text-center w-full">
-          <div className="w-24 h-24 bg-dark-bg text-[#FFC107] rounded-full flex items-center justify-center text-4xl font-bold mb-6 shadow-md">
-            {name ? name.charAt(0).toUpperCase() : (user?.email?.charAt(0).toUpperCase() || 'U')}
+          <div className="w-24 h-24 bg-dark-bg text-[#FFC107] rounded-full flex items-center justify-center text-4xl font-bold mb-6 shadow-md overflow-hidden">
+            {profileImage || user?.photoURL ? (
+                <img src={profileImage || user?.photoURL || ''} className="w-full h-full object-cover" alt="Profile" />
+            ) : (
+                name ? name.charAt(0).toUpperCase() : (user?.email?.charAt(0).toUpperCase() || 'U')
+            )}
           </div>
           <h2 className="text-2xl font-bold text-dark-bg">{name || "No Name Provided"}</h2>
           <p className="text-gray-500 mt-1">{user?.email || "No Email Provided"}</p>
@@ -1083,14 +1162,39 @@ function ProfileScreen({ savedAddress, savedPhone, onNavigate }: any) {
         </div>
       ) : (
         <form onSubmit={handleSave} className="flex flex-col space-y-4 w-full">
-          <div className="w-24 h-24 bg-dark-bg text-[#FFC107] rounded-full flex items-center justify-center text-4xl font-bold mb-6 mx-auto shadow-md">
-            {name ? name.charAt(0).toUpperCase() : (user?.email?.charAt(0).toUpperCase() || 'U')}
+          <div className="w-24 h-24 bg-dark-bg text-[#FFC107] rounded-full flex items-center justify-center text-4xl font-bold mb-6 mx-auto shadow-md relative overflow-hidden group">
+            {imageUploadLoading ? (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                </div>
+            ) : (
+                <>
+                    {profileImage || user?.photoURL ? (
+                        <img src={profileImage || user?.photoURL || ''} className="w-full h-full object-cover" alt="Profile" />
+                    ) : (
+                        name ? name.charAt(0).toUpperCase() : (user?.email?.charAt(0).toUpperCase() || 'U')
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera size={24} className="text-white mb-1" />
+                        <span className="text-white text-[10px] font-medium">Upload</span>
+                    </div>
+                    <input type="file" accept="image/*" capture="user" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
+                </>
+            )}
           </div>
           <input className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-dark-bg outline-none" placeholder="Name *" value={name} onChange={e => setName(e.target.value)} required />
           <input className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-gray-50 text-gray-500 outline-none" type="email" placeholder="Email *" value={user?.email || ""} disabled />
           <input className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-dark-bg outline-none" placeholder="WhatsApp Number" value={phone} onChange={e => setPhone(e.target.value)} />
           <textarea className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-dark-bg outline-none resize-none" placeholder="Full Delivery Address *" rows={2} value={address} onChange={e => setAddress(e.target.value)} required></textarea>
           
+          <button type="button" onClick={handleGetLocation} disabled={isLocating} className="flex items-center justify-center w-full bg-blue-50 text-blue-600 border border-blue-200 font-medium py-2 rounded-lg text-sm mt-1 transition-colors hover:bg-blue-100">
+            {isLocating ? (
+              <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div> Locating...</>
+            ) : (
+              <><MapPin size={16} className="mr-2" /> Use My Current Location</>
+            )}
+          </button>
+
           <div className="flex space-x-4 mt-4">
             <button type="button" onClick={() => setIsEditing(false)} className="flex-1 border border-gray-300 py-3 rounded-lg font-bold text-gray-600">Cancel</button>
             <button type="submit" disabled={loading} className="flex-1 bg-brand-yellow text-dark-bg py-3 rounded-lg font-bold">

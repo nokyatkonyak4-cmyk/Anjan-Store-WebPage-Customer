@@ -8,6 +8,7 @@ export default function CustomerSupportScreen() {
   const navigate = useNavigate();
   const [supportEmail, setSupportEmail] = useState('');
   const [supportPhone, setSupportPhone] = useState('');
+  const [supportWhatsapp, setSupportWhatsapp] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export default function CustomerSupportScreen() {
             const data = docSnap.data();
             if (data.supportEmail) setSupportEmail(data.supportEmail);
             if (data.supportPhone) setSupportPhone(data.supportPhone);
+            if (data.supportWhatsapp) setSupportWhatsapp(data.supportWhatsapp);
           }
         }
       } catch (error) {
@@ -57,9 +59,9 @@ export default function CustomerSupportScreen() {
           </div>
         ) : (
           <div className="w-full flex flex-col space-y-4 max-w-xs">
-            {supportPhone ? (
+            {(supportWhatsapp || supportPhone) ? (
               <a 
-                href={`https://wa.me/${supportPhone.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || supportPhone.replace(/\D/g, '')}`}
+                href={`https://wa.me/${(supportWhatsapp || supportPhone).match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || (supportWhatsapp || supportPhone).replace(/\D/g, '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3.5 rounded-full font-bold text-white transition-opacity text-center bg-[#4ade80] hover:bg-opacity-90 block"
@@ -72,9 +74,20 @@ export default function CustomerSupportScreen() {
               </button>
             )}
 
+            {supportPhone && (
+              <a 
+                href={`tel:${supportPhone.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || supportPhone.replace(/\D/g, '')}`}
+                
+                className="w-full py-3.5 rounded-full font-bold text-white transition-opacity text-center bg-blue-600 hover:bg-opacity-90 block"
+              >
+                Call Us
+              </a>
+            )}
+
             {supportEmail ? (
               <a 
                 href={`mailto:${supportEmail.trim()}`}
+                
                 className="w-full py-3.5 rounded-full font-bold text-white transition-opacity text-center bg-[#0f172a] hover:bg-opacity-90 block"
               >
                 Email Support
@@ -83,6 +96,36 @@ export default function CustomerSupportScreen() {
               <button disabled className="w-full py-3.5 rounded-full font-bold text-white bg-gray-300 cursor-not-allowed">
                 Email Support
               </button>
+            )}
+
+            {(supportWhatsapp || supportPhone || supportEmail) && (
+              <div className="mt-8 flex flex-col space-y-2 text-center">
+                <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Contact Details</span>
+                {supportWhatsapp && (
+                  <div className="text-sm text-gray-600 font-medium">
+                    <span>WhatsApp:&nbsp;</span>
+                    <a href={`https://wa.me/${supportWhatsapp.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || supportWhatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-dark-bg transition-colors font-semibold">
+                      {supportWhatsapp}
+                    </a>
+                  </div>
+                )}
+                {supportPhone && supportPhone !== supportWhatsapp && (
+                  <div className="text-sm text-gray-600 font-medium">
+                    <span>Phone:&nbsp;</span>
+                    <a href={`tel:${supportPhone.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, '') || supportPhone.replace(/\D/g, '')}`}  className="hover:text-dark-bg transition-colors font-semibold">
+                      {supportPhone}
+                    </a>
+                  </div>
+                )}
+                {supportEmail && (
+                  <div className="text-sm text-gray-600 font-medium">
+                    <span>Email:&nbsp;</span>
+                    <a href={`mailto:${supportEmail.trim()}`}  className="hover:text-dark-bg transition-colors font-semibold">
+                      {supportEmail}
+                    </a>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

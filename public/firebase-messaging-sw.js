@@ -21,11 +21,14 @@ self.addEventListener('push', function(event) {
       const body = notification.body || "You have a new message.";
       
       let url = '/';
-      if (orderId) {
+      if (data.click_action === 'OPEN_ORDER' && orderId) {
+          url = '/track_order/' + orderId;
+      } else if (orderId) {
           url = '/digital_bill/' + orderId;
-          if (notificationId) {
-              url += '?notificationId=' + notificationId;
-          }
+      }
+      
+      if (notificationId) {
+          url += (url.includes('?') ? '&' : '?') + 'notificationId=' + notificationId;
       }
       
       const options = {

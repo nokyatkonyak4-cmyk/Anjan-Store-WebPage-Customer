@@ -2,6 +2,7 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getStorage } from 'firebase/storage';
 import fallbackConfig from '../firebase-applet-config.json';
 
 const envConfig = {
@@ -27,6 +28,7 @@ export const db = app ? (useEnv ? getFirestore(app) : getFirestore(app, (fallbac
 export const auth = app ? getAuth(app) : null as any;
 
 export const messaging = app && typeof window !== 'undefined' ? getMessaging(app) : null as any;
+export const storage = app ? getStorage(app) : null as any;
 
 // Make isFirebaseConfigured available for exports
 export { isFirebaseConfigured };

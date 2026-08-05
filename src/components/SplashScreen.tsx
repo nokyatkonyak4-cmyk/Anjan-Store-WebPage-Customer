@@ -30,10 +30,11 @@ export default function SplashScreen({ onSplashFinished }: { onSplashFinished: (
           src="/AppIcon-512x512.png" 
           alt="App Logo 1" 
           className="w-[60%] max-w-[250px] h-[60%] max-h-[250px] object-contain transition-all duration-300" 
+          style={{ filter: 'drop-shadow(3px 3px 0 white) drop-shadow(-3px -3px 0 white) drop-shadow(3px -3px 0 white) drop-shadow(-3px 3px 0 white)' }}
         />
       ) : (
         <img 
-          src="/AppIcon-512x512.png" 
+          src="/app-icon.png.png" 
           alt="App Logo 2" 
           className="w-[60%] max-w-[250px] h-[60%] max-h-[250px] object-contain transform scale-110 transition-all duration-300" 
         />
