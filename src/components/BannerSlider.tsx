@@ -1,3 +1,4 @@
+import logoImage from "../assets/logo.png";
 import React, { useState, useEffect } from 'react';
 
 interface Props {
@@ -32,10 +33,10 @@ export default function BannerSlider({ slides, autoSlideInterval = 5000 }: Props
               onClick={() => slide.link && window.open(slide.link, '_blank')}
             >
               <img 
-                src={slide.imageUrl || "/logo.png?v=4"} 
+                src={slide.imageUrl || logoImage} 
                 alt={slide.title || "Banner"} 
                 className="w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="/logo.png?v=4"; }}
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src=logoImage; }}
               />
             </div>
           ))}

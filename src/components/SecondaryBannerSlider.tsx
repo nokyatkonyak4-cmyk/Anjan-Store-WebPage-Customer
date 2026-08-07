@@ -1,3 +1,4 @@
+import logoImage from "../assets/logo.png";
 import React, { useState, useEffect } from 'react';
 
 export interface CampaignSlide {
@@ -49,10 +50,10 @@ export default function SecondaryBannerSlider({ slides, autoSlideInterval = 4000
                  onClick={() => onSlideClick && onSlideClick(slide)}
                >
                  <img 
-                   src={slide.imageUrl || "/logo.png?v=4"} 
+                   src={slide.imageUrl || logoImage} 
                    alt={slide.title} 
                    className="w-full h-full object-cover"
-                   onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="/logo.png?v=4"; }}
+                   onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src=logoImage; }}
                  />
                  
                  {/* Gradient overlay */}
