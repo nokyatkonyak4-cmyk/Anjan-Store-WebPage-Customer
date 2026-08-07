@@ -781,14 +781,14 @@ function HomeScreen({
                     src={
                       cat.imageUrl ||
                       cat.image ||
-                      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"
+                      "/logo.png"
                     }
                     alt={cat.name}
                     className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src =
-                        "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200";
+                        "/logo.png";
                     }}
                   />
                 </div>
@@ -1127,14 +1127,14 @@ function CategoriesScreen({ categories, onNavigate }: any) {
                 src={
                   cat.imageUrl ||
                   cat.image ||
-                  "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200"
+                  "/logo.png"
                 }
                 alt={cat.name}
                 className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src =
-                    "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=200";
+                    "/logo.png";
                 }}
               />
             </div>
@@ -1212,7 +1212,7 @@ function ProductDetailScreen({
     (product.imageUrl || product.image
       ? [product.imageUrl || product.image]
       : [
-          "https://images.unsplash.com/photo-1560806887-1e4cd0b6faa6?auto=format&fit=crop&q=80&w=300",
+          "/logo.png",
         ]);
 
   return (
@@ -1248,7 +1248,7 @@ function ProductDetailScreen({
                 onError={(e) => {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src =
-                    "https://images.unsplash.com/photo-1560806887-1e4cd0b6faa6?auto=format&fit=crop&q=80&w=300";
+                    "/logo.png";
                 }}
               />
             </div>
@@ -1529,14 +1529,14 @@ function CartScreen({
               src={
                 item.product.imageUrl ||
                 item.product.image ||
-                "https://images.unsplash.com/photo-1560806887-1e4cd0b6faa6?auto=format&fit=crop&q=80&w=300"
+                "/logo.png"
               }
               alt={item.product.name}
               className="w-16 h-16 rounded-lg object-cover bg-gray-50 mr-3 shrink-0"
               onError={(e) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src =
-                  "https://images.unsplash.com/photo-1560806887-1e4cd0b6faa6?auto=format&fit=crop&q=80&w=300";
+                  "/logo.png";
               }}
             />
             <div className="flex flex-col flex-1">
@@ -2295,14 +2295,14 @@ function ProductCard({
           src={
             product.imageUrl ||
             product.image ||
-            "https://images.unsplash.com/photo-1560806887-1e4cd0b6faa6?auto=format&fit=crop&q=80&w=300"
+            "/logo.png"
           }
           alt={product.name}
           className="w-full h-full object-contain"
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src =
-              "https://images.unsplash.com/photo-1560806887-1e4cd0b6faa6?auto=format&fit=crop&q=80&w=300";
+              "/logo.png";
           }}
         />
       </div>
