@@ -1,16 +1,25 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Function to check if user is an admin (requires an 'admins' collection or custom claim, you may adjust based on your Manager app)
+    function isAdmin() {
+      // Simplest way for now without custom claims if your manager app doesn't use them: 
+      // check if user document has isAdmin == true, or use a specific admins collection.
+      // For now, we will allow read for customers and keep write open for authenticated users 
+      // BUT you MUST implement proper admin verification for a production environment.
+      return request.auth != null; // WARNING: Replace with actual admin check
+    }
+
     match /staticPages/{document=**} {
       allow read: if true;
     }
     match /categories/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
     match /products/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
     match /products/{productId}/reviews/{reviewId} {
       allow read: if true;
@@ -18,25 +27,28 @@ service cloud.firestore {
     }
     match /banners/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
     match /settings/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
     match /feedbacks/{document=**} {
-      allow create: if true;
-      allow read, write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow read: if isAdmin();
+      allow write: if isAdmin();
     }
     match /orders/{document=**} {
       allow create: if request.auth != null;
-      allow read, update, delete: if request.auth != null && (resource.data.customerId == request.auth.uid || request.auth.uid != null);
+      // Customers can read/update their own orders. Admins can read/update all.
+      allow read, update: if request.auth != null && (resource.data.customerId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
     }
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
     match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
   }
 }
