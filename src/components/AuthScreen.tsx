@@ -1,4 +1,3 @@
-import logoImage from "../assets/logo.png";
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { auth, isFirebaseConfigured } from '../firebase';
@@ -123,7 +122,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
       <div className="flex flex-col min-h-screen w-full bg-brand-yellow items-center justify-center p-6">
         <div className="w-full max-w-md bg-white/20 md:bg-white md:shadow-xl md:rounded-2xl p-0 md:p-8 rounded-none border-none">
           <div className="flex justify-center mb-6 flex">
-            <img src={logoImage} alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
+            <img src="/AppIcon-512x512.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
           </div>
           <h1 className="text-2xl font-semibold text-dark-bg mb-4 md:text-center">
             Reset Password
@@ -189,7 +188,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
     <div className="flex flex-col min-h-screen w-full bg-brand-yellow items-center justify-center p-6">
       <div className="w-full max-w-md bg-white/20 md:bg-white md:shadow-xl md:rounded-2xl p-0 md:p-8 rounded-none border-none">
         <div className="flex justify-center mb-6 flex">
-          <img src={logoImage} alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
+          <img src="/AppIcon-512x512.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
         </div>
         <h1 className="text-2xl font-semibold text-dark-bg mb-8 md:text-center">
           {isSignUp ? 'Create Account' : 'Welcome Back'}
