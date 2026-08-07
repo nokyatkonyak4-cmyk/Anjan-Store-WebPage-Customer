@@ -51,7 +51,7 @@ export default function SecondaryBannerSlider({ slides, autoSlideInterval = 4000
                  <img 
                    src={slide.imageUrl || "/AppIcon-512x512.png"} 
                    alt={slide.title} 
-                   className="w-full h-full object-cover"
+                   className="w-full h-full object-contain"
                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="/AppIcon-512x512.png"; }}
                  />
                  

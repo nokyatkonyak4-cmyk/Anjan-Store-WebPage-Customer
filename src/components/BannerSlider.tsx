@@ -34,7 +34,7 @@ export default function BannerSlider({ slides, autoSlideInterval = 5000 }: Props
               <img 
                 src={slide.imageUrl || "/AppIcon-512x512.png"} 
                 alt={slide.title || "Banner"} 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="/AppIcon-512x512.png"; }}
               />
             </div>

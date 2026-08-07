@@ -7,6 +7,8 @@ import {
   ShoppingCart,
   Search,
   Heart,
+  Moon,
+  Sun,
   Bell,
   User,
   ArrowLeft,
@@ -21,6 +23,7 @@ import {
   Shield,
   CheckCircle,
   ChevronRight,
+  ChevronLeft,
   Phone,
   RefreshCcw,
   Map,
@@ -53,6 +56,32 @@ export default function MainAppScreen() {
   const navigate = useNavigate();
   const user = auth?.currentUser;
   const [selectedItem, setSelectedItem] = useState("Home");
+  const [navHistory, setNavHistory] = useState<string[]>(["Home"]);
+
+  const handleNavigate = (item: string) => {
+    if (item === "Back") {
+      handleGoBack();
+      return;
+    }
+    setNavHistory((prev) => {
+      if (prev[prev.length - 1] === item) return prev;
+      return [...prev, item];
+    });
+    setSelectedItem(item);
+  };
+
+  const handleGoBack = () => {
+    setNavHistory((prev) => {
+      if (prev.length > 1) {
+        const newHistory = [...prev];
+        newHistory.pop();
+        const prevItem = newHistory[newHistory.length - 1];
+        setSelectedItem(prevItem);
+        return newHistory;
+      }
+      return prev;
+    });
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [cartItems, setCartItems] = useState<
     { product: any; quantity: number }[]
@@ -70,11 +99,23 @@ export default function MainAppScreen() {
   const [savedAddress, setSavedAddress] = useState("");
   const [savedPhone, setSavedPhone] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDarkMode]);
 
   const [storeSettings, setStoreSettings] = useState<{
     supportEmail?: string;
     supportPhone?: string;
     supportWhatsapp?: string;
+    deliveryFee?: number;
+    handlingFee?: number;
   } | null>(null);
 
   // Feedback State
@@ -319,7 +360,7 @@ export default function MainAppScreen() {
             return (
               <button
                 key={`desktop-nav-${index}`}
-                onClick={() => setSelectedItem(item.title)}
+                onClick={() => handleNavigate(item.title)}
                 className={`flex items-center w-full px-4 py-3 rounded-xl transition-all ${isSelected ? "bg-white text-dark-bg font-bold shadow-sm" : "text-dark-bg/80 hover:bg-white/50 hover:text-dark-bg font-medium"}`}
               >
                 <div className="relative mr-3">
@@ -374,13 +415,23 @@ export default function MainAppScreen() {
 
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setSelectedItem("Favorites")}
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="md:hover:bg-white/50 md:p-2 md:rounded-full transition"
+              >
+                {isDarkMode ? (
+                  <Sun size={24} className="text-dark-bg" />
+                ) : (
+                  <Moon size={24} className="text-dark-bg" />
+                )}
+              </button>
+              <button
+                onClick={() => handleNavigate("Favorites")}
                 className="md:hover:bg-white/50 md:p-2 md:rounded-full transition"
               >
                 <Heart size={24} className="text-dark-bg" />
               </button>
               <button
-                onClick={() => setSelectedItem("Notifications")}
+                onClick={() => handleNavigate("Notifications")}
                 className="relative md:hover:bg-white/50 md:p-2 md:rounded-full transition"
               >
                 <Bell size={24} className="text-dark-bg" />
@@ -391,7 +442,7 @@ export default function MainAppScreen() {
                 )}
               </button>
               <button
-                onClick={() => setSelectedItem("Profile")}
+                onClick={() => handleNavigate("Profile")}
                 className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-dark-bg text-[#FFC107] flex items-center justify-center font-bold text-sm md:text-base cursor-pointer shadow-sm hover:opacity-90 transition"
               >
                 {user?.email?.charAt(0).toUpperCase() || "U"}
@@ -407,7 +458,7 @@ export default function MainAppScreen() {
               <HomeScreen
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
-                onNavigate={setSelectedItem}
+                onNavigate={handleNavigate}
                 products={products}
                 categories={categories}
                 banners={banners}
@@ -423,7 +474,7 @@ export default function MainAppScreen() {
               <ProductDetailScreen user={user}
                 productId={selectedItem.replace("Product_", "")}
                 products={products}
-                onNavigate={setSelectedItem}
+                onNavigate={handleNavigate}
                 favorites={favorites}
                 cartItems={cartItems}
                 toggleFavorite={toggleFavorite}
@@ -434,7 +485,7 @@ export default function MainAppScreen() {
             {selectedItem === "Categories" && (
               <CategoriesScreen
                 categories={categories}
-                onNavigate={setSelectedItem}
+                onNavigate={handleNavigate}
               />
             )}
             {selectedItem.startsWith("Category_") && (
@@ -442,7 +493,7 @@ export default function MainAppScreen() {
                 categoryId={selectedItem.replace("Category_", "")}
                 categories={categories}
                 products={products}
-                onNavigate={setSelectedItem}
+                onNavigate={handleNavigate}
                 favorites={favorites}
                 cartItems={cartItems}
                 toggleFavorite={toggleFavorite}
@@ -458,14 +509,15 @@ export default function MainAppScreen() {
                 savedPhone={savedPhone}
                 incrementCart={incrementCart}
                 decrementCart={decrementCart}
-                onNavigate={setSelectedItem}
+                onNavigate={handleNavigate}
+                storeSettings={storeSettings}
               />
             )}
             {selectedItem === "Orders" && <OrdersScreen orders={orders} />}
             {selectedItem === "Favorites" && (
               <FavoritesScreen
                 products={products}
-                onNavigate={setSelectedItem}
+                onNavigate={handleNavigate}
                 favorites={favorites}
                 cartItems={cartItems}
                 toggleFavorite={toggleFavorite}
@@ -476,7 +528,7 @@ export default function MainAppScreen() {
             {selectedItem === "Notifications" && (
               <NotificationsScreen
                 notifications={notifications}
-                onNavigate={setSelectedItem}
+                onNavigate={handleNavigate}
               />
             )}
             {selectedItem === "Profile" && (
@@ -484,13 +536,13 @@ export default function MainAppScreen() {
                 savedAddress={savedAddress}
                 savedPhone={savedPhone}
                 profileImage={profileImage}
-                onNavigate={setSelectedItem}
+                onNavigate={handleNavigate}
               />
             )}
             {selectedItem === "OrderHistory" && (
               <OrderHistoryScreen
                 orders={orders}
-                onNavigate={setSelectedItem}
+                onNavigate={handleNavigate}
                 onLeaveFeedback={(order: any) => {
                   setFeedbackOrder(order);
                   setFeedbackRating(5);
@@ -513,7 +565,7 @@ export default function MainAppScreen() {
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 key={`${item.title}-${index}`}
-                onClick={() => setSelectedItem(item.title)}
+                onClick={() => handleNavigate(item.title)}
                 className={`flex items-center justify-center transition-all duration-300 h-[40px] ${isSelected ? "bg-dark-bg text-brand-yellow px-4 rounded-full space-x-2" : "flex-col space-y-1 w-[60px] text-gray-400"}`}
               >
                 <div className="relative flex items-center justify-center">
@@ -1160,6 +1212,9 @@ function ProductDetailScreen({
   user,
 }: any) {
   const product = products.find((p: any) => p.id === productId);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  
   if (!product)
     return (
       <div className="p-8 text-center text-gray-500">Product not found</div>
@@ -1208,6 +1263,7 @@ function ProductDetailScreen({
     cartItems.find((i: any) => i.product.id === product.id)?.quantity || 0;
   const isFavorite = favorites.includes(product.id);
   const images =
+    product.imageUrls ||
     product.images ||
     (product.imageUrl || product.image
       ? [product.imageUrl || product.image]
@@ -1219,7 +1275,7 @@ function ProductDetailScreen({
     <div className="flex flex-col w-full animate-in fade-in pb-20">
       <div className="relative w-full h-[300px] md:h-[400px] bg-white">
         <button
-          onClick={() => onNavigate("Home")}
+          onClick={() => onNavigate("Back")}
           className="absolute top-4 left-4 z-10 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm"
         >
           <ArrowLeft size={20} className="text-dark-bg" />
@@ -1235,11 +1291,19 @@ function ProductDetailScreen({
             }
           />
         </button>
-        <div className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+        <div 
+          ref={scrollContainerRef}
+          onScroll={(e) => {
+            const scrollLeft = e.currentTarget.scrollLeft;
+            const width = e.currentTarget.clientWidth;
+            setCurrentImageIndex(Math.round(scrollLeft / width));
+          }}
+          className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth relative"
+        >
           {images.map((img: string, idx: number) => (
             <div
               key={idx}
-              className="w-full h-full shrink-0 snap-center flex items-center justify-center p-8"
+              className="w-full h-full shrink-0 snap-center flex items-center justify-center p-2"
             >
               <img
                 src={img}
@@ -1255,14 +1319,50 @@ function ProductDetailScreen({
           ))}
         </div>
         {images.length > 1 && (
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2 z-10 pointer-events-none">
-            {images.map((_: any, idx: number) => (
-              <div key={idx} className="w-2 h-2 rounded-full bg-dark-bg/20" />
-            ))}
-          </div>
+          <>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                if (scrollContainerRef.current) {
+                  scrollContainerRef.current.scrollBy({ left: -scrollContainerRef.current.clientWidth, behavior: 'smooth' });
+                }
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md z-10 hover:bg-white transition"
+            >
+              <ChevronLeft size={24} className="text-dark-bg" />
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                if (scrollContainerRef.current) {
+                  scrollContainerRef.current.scrollBy({ left: scrollContainerRef.current.clientWidth, behavior: 'smooth' });
+                }
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md z-10 hover:bg-white transition"
+            >
+              <ChevronRight size={24} className="text-dark-bg" />
+            </button>
+          </>
         )}
       </div>
-      <div className="p-5 bg-white rounded-t-3xl -mt-6 relative z-10 flex-1 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
+      {images.length > 1 && (
+        <div className="bg-white px-4 py-3 flex overflow-x-auto space-x-3 scrollbar-hide border-b border-gray-100">
+          {images.map((img: string, idx: number) => (
+            <button
+              key={idx}
+              onClick={() => {
+                if (scrollContainerRef.current) {
+                  scrollContainerRef.current.scrollTo({ left: idx * scrollContainerRef.current.clientWidth, behavior: 'smooth' });
+                }
+              }}
+              className={`relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${idx === currentImageIndex ? 'border-brand-yellow shadow-sm scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}
+            >
+              <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+      <div className={`p-5 bg-white relative z-10 flex-1 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] border-t border-gray-100 ${images.length <= 1 ? 'rounded-t-3xl -mt-6' : ''}`}>
         <div className="flex justify-between items-start mb-2">
           <h1 className="text-2xl font-bold text-dark-bg">{product.name}</h1>
           <h2 className="text-xl font-bold text-dark-bg">₹{product.price}</h2>
@@ -1399,7 +1499,7 @@ function CategoryDetailScreen({
     <div className="flex flex-col w-full p-4 animate-in fade-in">
       <div
         className="flex items-center mb-6 cursor-pointer"
-        onClick={() => onNavigate("Categories")}
+        onClick={() => onNavigate("Back")}
       >
         <ArrowLeft size={24} className="text-dark-bg mr-3" />
         <h2 className="text-xl font-bold text-dark-bg">
@@ -1442,11 +1542,22 @@ function CartScreen({
   decrementCart,
   user,
   onNavigate,
+  storeSettings,
 }: any) {
-  const total = cartItems.reduce(
-    (acc: number, item: any) => acc + item.product.price * item.quantity,
-    0,
-  );
+  // 1. Calculate the total cost of items in the cart
+  const getOrderItemsTotal = (items: any[]) => {
+    return items.reduce((sum, item) => sum + ((item.product.price || 0) * (item.quantity || 1)), 0);
+  };
+
+  // 2. Safely retrieve dynamic fees
+  const handlingFee = Number(storeSettings?.handlingFee || 0);
+  const deliveryFee = Number(storeSettings?.deliveryFee || 0);
+
+  // 3. Accurately calculate the Grand Total Bill
+  const getGrandTotal = (items: any[]) => {
+    return getOrderItemsTotal(items) + handlingFee + deliveryFee;
+  };
+
   const [showConfirm, setShowConfirm] = useState(false);
   const [deliveryType, setDeliveryType] = useState("Instant delivery");
 
@@ -1462,7 +1573,9 @@ function CartScreen({
     if (!auth?.currentUser || !db) return;
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const orderData = {
+    
+    // Example Usage during Checkout Submission:
+    const finalOrderPayload = {
       customerId: auth.currentUser.uid,
       customerName: auth.currentUser.displayName || "Customer",
       phone: savedPhone,
@@ -1473,8 +1586,10 @@ function CartScreen({
         price: i.product.price,
         quantity: i.quantity,
       })),
-      totalPrice: total,
-      deliveryFee: 0,
+      totalPrice: getOrderItemsTotal(cartItems),
+      handlingFee: handlingFee,
+      deliveryFee: deliveryFee,
+      totalBill: getGrandTotal(cartItems), // Always exactly Items + Handling + Delivery
       deliveryType,
       status: "Pending Approval",
       deliveryOtp: otp,
@@ -1483,7 +1598,7 @@ function CartScreen({
     };
 
     try {
-      await addDoc(collection(db, "orders"), orderData);
+      await addDoc(collection(db, "orders"), finalOrderPayload);
       setCartItems([]);
       setShowConfirm(false);
       onNavigate("Orders");
@@ -1527,12 +1642,14 @@ function CartScreen({
           >
             <img
               src={
+                (item.product.imageUrls && item.product.imageUrls[0]) ||
+                (item.product.images && item.product.images[0]) ||
                 item.product.imageUrl ||
                 item.product.image ||
                 "/AppIcon-512x512.png"
               }
               alt={item.product.name}
-              className="w-16 h-16 rounded-lg object-cover bg-gray-50 mr-3 shrink-0"
+              className="w-16 h-16 rounded-lg object-contain bg-gray-50 mr-3 shrink-0"
               onError={(e) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src =
@@ -1568,20 +1685,29 @@ function CartScreen({
         ))}
       </div>
 
-      <div className="bg-white p-4 absolute bottom-0 left-0 right-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-3xl border-t border-gray-100 z-10 pb-24">
-        <div className="flex justify-between items-center mb-1">
-          <span className="font-bold text-lg text-dark-bg">Items Total</span>
-          <span className="font-bold text-lg text-dark-bg">₹{total}</span>
+      <div className="bg-white p-4 absolute bottom-0 left-0 right-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-3xl border-t border-gray-100 z-10 pb-24 space-y-2">
+        <div className="flex justify-between items-center text-sm text-gray-500">
+          <span>Items Cost</span>
+          <span>₹{getOrderItemsTotal(cartItems)}</span>
         </div>
-        <span className="text-xs text-gray-500 block mb-4">
-          + Delivery charge calculated at next step
-        </span>
+        <div className="flex justify-between items-center text-sm text-gray-500">
+          <span>Handling Fee</span>
+          <span>₹{handlingFee}</span>
+        </div>
+        <div className="flex justify-between items-center text-sm text-gray-500 border-b border-gray-100 pb-2">
+          <span>Delivery Fee</span>
+          <span>₹{deliveryFee}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2 pt-1">
+          <span className="font-bold text-lg text-dark-bg">Grand Total</span>
+          <span className="font-bold text-lg text-dark-bg">₹{getGrandTotal(cartItems)}</span>
+        </div>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowConfirm(true)}
-          className="w-full bg-brand-yellow text-dark-bg font-bold py-3.5 rounded-xl shadow-sm text-base"
+          className="w-full bg-brand-yellow text-dark-bg font-bold py-3.5 rounded-xl shadow-sm text-base mt-2"
         >
-          Checkout & Request Delivery Quote
+          Checkout Now
         </motion.button>
       </div>
 
@@ -1705,7 +1831,7 @@ function OrdersScreen({ orders }: any) {
       ) : (
         <div className="space-y-6 pb-6 mt-2">
           {activeOrders.map((order: any, index: number) => {
-            const total = (order.total || 0) + (order.deliveryFee || 0);
+            const total = order.totalBill || ((order.totalPrice || order.total || 0) + (order.handlingFee || 0) + (order.deliveryFee || 0));
             return (
               <div
                 key={`${order.id}-${index}`}
@@ -1785,9 +1911,15 @@ function OrdersScreen({ orders }: any) {
                       </div>
                     ))}
                   <div className="flex justify-between text-xs text-gray-400 pt-1">
+                    <span>Handling Fee</span>
+                    <span className="font-bold text-dark-bg">
+                      ₹{order.handlingFee || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-400 pt-1">
                     <span>Delivery Fee</span>
                     <span className="font-bold text-dark-bg">
-                      ₹{order.deliveryFee || 30.0}
+                      ₹{order.deliveryFee || 0}
                     </span>
                   </div>
                 </div>
@@ -1816,7 +1948,7 @@ function OrderHistoryScreen({ orders, onNavigate, onLeaveFeedback }: any) {
     <div className="flex flex-col w-full max-w-2xl mx-auto p-4 animate-in fade-in bg-white min-h-full">
       <div
         className="flex items-center mb-6 cursor-pointer"
-        onClick={() => onNavigate("Profile")}
+        onClick={() => onNavigate("Back")}
       >
         <ArrowLeft size={24} className="text-dark-bg mr-3" />
         <h2 className="text-xl font-bold text-dark-bg">Order History</h2>
@@ -1829,7 +1961,7 @@ function OrderHistoryScreen({ orders, onNavigate, onLeaveFeedback }: any) {
       ) : (
         <div className="space-y-4 pb-6 mt-2">
           {pastOrders.map((order: any, index: number) => {
-            const total = (order.total || 0) + (order.deliveryFee || 0);
+            const total = order.totalBill || ((order.totalPrice || order.total || 0) + (order.handlingFee || 0) + (order.deliveryFee || 0));
             return (
               <div
                 key={`${order.id}-${index}`}
@@ -1876,9 +2008,15 @@ function OrderHistoryScreen({ orders, onNavigate, onLeaveFeedback }: any) {
                       </div>
                     ))}
                   <div className="flex justify-between text-xs text-gray-400 pt-1">
+                    <span>Handling Fee</span>
+                    <span className="font-bold text-dark-bg">
+                      ₹{order.handlingFee || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-400 pt-1">
                     <span>Delivery Fee</span>
                     <span className="font-bold text-dark-bg">
-                      ₹{order.deliveryFee || 30.0}
+                      ₹{order.deliveryFee || 0}
                     </span>
                   </div>
                 </div>
@@ -1922,7 +2060,7 @@ function FavoritesScreen({
     <div className="flex flex-col w-full p-4 animate-in fade-in">
       <div
         className="flex items-center mb-6 cursor-pointer"
-        onClick={() => onNavigate("Home")}
+        onClick={() => onNavigate("Back")}
       >
         <ArrowLeft size={24} className="text-dark-bg mr-3" />
         <h2 className="text-xl font-bold text-dark-bg">My Favorites</h2>
@@ -1974,7 +2112,7 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
     <div className="flex flex-col w-full p-4 animate-in fade-in">
       <div
         className="flex items-center mb-6 cursor-pointer"
-        onClick={() => onNavigate("Home")}
+        onClick={() => onNavigate("Back")}
       >
         <ArrowLeft size={24} className="text-dark-bg mr-3" />
         <h2 className="text-xl font-bold text-dark-bg">Notifications</h2>
@@ -2285,18 +2423,16 @@ function ProductCard({
   onDecrement,
   onProductClick,
 }: any) {
+  const images = product.imageUrls || product.images || (product.imageUrl || product.image ? [product.imageUrl || product.image] : ["/AppIcon-512x512.png"]);
+  const extraImagesCount = images.length > 1 ? images.length - 1 : 0;
   return (
     <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col h-[200px] md:h-[250px] border border-gray-100 transition-shadow relative">
       <div
-        className="relative h-[100px] md:h-[130px] w-full shrink-0 p-3 flex items-center justify-center border-b border-gray-50 cursor-pointer"
+        className="relative h-[100px] md:h-[130px] w-full shrink-0 p-1 flex items-center justify-center border-b border-gray-50 cursor-pointer"
         onClick={() => onProductClick && onProductClick(product)}
       >
         <img
-          src={
-            product.imageUrl ||
-            product.image ||
-            "/AppIcon-512x512.png"
-          }
+          src={images[0]}
           alt={product.name}
           className="w-full h-full object-contain"
           onError={(e) => {
@@ -2305,6 +2441,11 @@ function ProductCard({
               "/AppIcon-512x512.png";
           }}
         />
+        {extraImagesCount > 0 && (
+          <div className="absolute bottom-2 left-2 bg-dark-bg/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center shadow-sm">
+            +{extraImagesCount} Photos
+          </div>
+        )}
       </div>
       <motion.button
         whileTap={{ scale: 0.9 }}

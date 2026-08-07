@@ -160,7 +160,7 @@ export default function OrderTrackingScreen() {
     if (enteredPin === order?.deliveryOtp) {
       setPinVerified(true);
     } else {
-      alert("Invalid PIN. Please try again.");
+      alert("delivery confirmation PIN is Incorrect.");
     }
   };
 

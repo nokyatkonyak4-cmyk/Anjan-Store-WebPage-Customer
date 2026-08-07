@@ -26,6 +26,11 @@
   <meta property="twitter:image" content="https://www.anjanstore.in/AppIcon-512x512.png" />
 </head>
 <body>
+  <script>
+    if (localStorage.getItem("theme") === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+  </script>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
