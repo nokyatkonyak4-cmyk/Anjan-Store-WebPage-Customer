@@ -32,10 +32,10 @@ export default function BannerSlider({ slides, autoSlideInterval = 5000 }: Props
               onClick={() => slide.link && window.open(slide.link, '_blank')}
             >
               <img 
-                src={slide.imageUrl || "/logo.png"} 
+                src={slide.imageUrl || "/logo.png?v=4"} 
                 alt={slide.title || "Banner"} 
                 className="w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="/logo.png"; }}
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="/logo.png?v=4"; }}
               />
             </div>
           ))}
