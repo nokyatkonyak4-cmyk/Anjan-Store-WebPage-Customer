@@ -132,7 +132,7 @@ export default function DigitalBillScreen() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen max-w-2xl w-full mx-auto bg-[#F8F9FA] justify-center items-center">
+      <div className="flex flex-col min-h-[100dvh] max-w-2xl w-full mx-auto bg-[#F8F9FA] justify-center items-center">
         <Loader2 className="animate-spin text-[#FACC15]" size={32} />
       </div>
     );
@@ -140,7 +140,7 @@ export default function DigitalBillScreen() {
 
   if (!order) {
     return (
-      <div className="flex flex-col min-h-screen max-w-2xl w-full mx-auto bg-[#F8F9FA] justify-center items-center">
+      <div className="flex flex-col min-h-[100dvh] max-w-2xl w-full mx-auto bg-[#F8F9FA] justify-center items-center">
         <span className="text-gray-500">Order not found.</span>
         <button
           onClick={() => navigate(-1)}
@@ -160,7 +160,7 @@ export default function DigitalBillScreen() {
   const grandTotal = subtotal + tax + order.deliveryFee;
 
   return (
-    <div className="flex flex-col min-h-screen max-w-2xl w-full mx-auto bg-[#F8F9FA] relative animate-in slide-in-from-right">
+    <div className="flex flex-col min-h-[100dvh] max-w-2xl w-full mx-auto bg-[#F8F9FA] relative animate-in slide-in-from-right">
       <div className="bg-[#FACC15] text-[#0F172A] px-4 py-4 flex items-center shadow-sm sticky top-0 z-20">
         <button onClick={() => navigate(-1)} className="mr-3">
           <ArrowLeft size={24} />

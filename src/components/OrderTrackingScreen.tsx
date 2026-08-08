@@ -188,7 +188,7 @@ export default function OrderTrackingScreen() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen max-w-2xl w-full mx-auto bg-[#F8F9FA] justify-center items-center">
+      <div className="flex flex-col min-h-[100dvh] max-w-2xl w-full mx-auto bg-[#F8F9FA] justify-center items-center">
         <Loader2 className="animate-spin text-[#FACC15]" size={32} />
       </div>
     );
@@ -196,7 +196,7 @@ export default function OrderTrackingScreen() {
 
   if (!order) {
     return (
-      <div className="flex flex-col min-h-screen max-w-2xl w-full mx-auto bg-[#F8F9FA] justify-center items-center">
+      <div className="flex flex-col min-h-[100dvh] max-w-2xl w-full mx-auto bg-[#F8F9FA] justify-center items-center">
         <span className="text-gray-500">Order not found.</span>
         <button
           onClick={() => navigate(-1)}
@@ -243,7 +243,7 @@ export default function OrderTrackingScreen() {
   }
 
   return (
-    <div className="flex flex-col h-screen max-w-2xl w-full mx-auto bg-gray-100 relative animate-in slide-in-from-right overflow-hidden shadow-2xl">
+    <div className="flex flex-col h-[100dvh] max-w-2xl w-full mx-auto bg-gray-100 relative animate-in slide-in-from-right overflow-hidden shadow-2xl">
       <div className="bg-white text-[#0F172A] px-4 py-4 flex items-center shadow-sm z-20 shrink-0">
         <button onClick={() => navigate(-1)} className="mr-3">
           <ArrowLeft size={24} />

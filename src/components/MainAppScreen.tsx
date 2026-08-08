@@ -93,7 +93,42 @@ export default function MainAppScreen() {
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications1, setNotifications1] = useState<any[]>([]);
+  const [notifications2, setNotifications2] = useState<any[]>([]);
+  const [notifications3, setNotifications3] = useState<any[]>([]);
+
+  const notifications = React.useMemo(() => {
+    const all = [...notifications1, ...notifications2, ...notifications3];
+    const uniqueMap = new window.Map();
+    all.forEach(n => {
+      if (!uniqueMap.has(n.id)) uniqueMap.set(n.id, n);
+    });
+    return Array.from(uniqueMap.values()).sort(
+      (a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0)
+    );
+  }, [notifications1, notifications2, notifications3]);
+
+  const previousOrderStatuses = React.useRef<Record<string, string>>({});
+  const [pinAlertModal, setPinAlertModal] = useState<string | null>(null);
+  const seenPinNotifications = React.useRef(new Set<string>());
+
+  useEffect(() => {
+    notifications.forEach((notif) => {
+      if (!seenPinNotifications.current.has(notif.id)) {
+        seenPinNotifications.current.add(notif.id);
+        const msg = String(notif.message || "");
+        const title = String(notif.title || "");
+        const isRead = notif.isRead || false;
+        
+        if (!isRead && (title.toLowerCase().includes("resend_pin") || msg.toLowerCase().includes("resend_pin"))) {
+          const match = msg.match(/\b\d{4}\b/);
+          if (match) {
+            setPinAlertModal(match[0]);
+          }
+        }
+      }
+    });
+  }, [notifications]);
 
   // User Profile
   const [savedAddress, setSavedAddress] = useState("");
@@ -240,20 +275,114 @@ export default function MainAppScreen() {
               (a: any, b: any) => (b.createdAtMs || 0) - (a.createdAtMs || 0),
             );
           setOrders(fetchedOrders);
+
+          snapshot.docChanges().forEach((change) => {
+            const data = change.doc.data();
+            const orderId = change.doc.id;
+            const newStatus = data.status || "";
+            const otp = data.deliveryOtp || "";
+
+            if (change.type === "added") {
+              previousOrderStatuses.current[orderId] = newStatus;
+            } else if (change.type === "modified") {
+              const oldStatus = previousOrderStatuses.current[orderId];
+              
+              if (oldStatus && newStatus !== oldStatus) {
+                previousOrderStatuses.current[orderId] = newStatus;
+
+                let alertMsg = "";
+                let alertPin = "";
+
+                if (newStatus === "Out for Delivery") {
+                    if (otp) {
+                        alertMsg = `Your order #${orderId.substring(0, 6).toUpperCase()} is out for delivery! The delivery partner is on the way.`;
+                        alertPin = otp;
+                    }
+                } else if (newStatus && newStatus !== "Pending Approval") {
+                    let formattedStatus = "";
+                    switch (newStatus) {
+                        case "Accepted by Store":
+                        case "Accepted":
+                            formattedStatus = "has been accepted by store";
+                            break;
+                        case "Driver Assigned":
+                        case "Accepted by Delivery Boy":
+                            formattedStatus = "has been assigned to a delivery partner";
+                            break;
+                        case "Packed":
+                        case "Ready for Delivery":
+                            formattedStatus = "is packed and ready for delivery";
+                            break;
+                        case "Delivered":
+                            formattedStatus = "has been delivered. Thank you!";
+                            break;
+                        case "Pending Payment":
+                            formattedStatus = "is pending payment";
+                            break;
+                        case "Arrived":
+                        case "Reached":
+                        case "Reached Location":
+                            formattedStatus = "driver has reached your location";
+                            break;
+                        default:
+                            formattedStatus = `status is now ${newStatus}`;
+                    }
+                    alertMsg = `Your order #${orderId.substring(0, 6).toUpperCase()} ${formattedStatus}`;
+                }
+
+                if (alertMsg) {
+                    const notifText = alertPin ? `${alertMsg} \nPIN: ${alertPin}` : alertMsg;
+                    const notifRef1 = doc(collection(db, "users", user.uid, "notifications"));
+                    const notifData = {
+                      id: notifRef1.id,
+                      title: "Order Update",
+                      message: notifText,
+                      timestamp: Date.now(),
+                      createdAt: Date.now(),
+                      isRead: false,
+                      userId: user.uid,
+                      customerId: user.uid
+                    };
+                    
+                    setDoc(notifRef1, notifData).catch(console.error);
+                    const notifRef2 = doc(collection(db, "userNotifications"), notifRef1.id);
+                    setDoc(notifRef2, notifData).catch(console.error);
+                }
+              }
+            }
+          });
         }, (error) => console.error("Orders snapshot error:", error)),
     );
 
-    // Listen to Notifications
+    const mapNotification = (d: any) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ...data,
+        title: data.title || data.type || "Notification",
+        message: data.message || data.body || data.text || data.content || ""
+      };
+    };
+
+    // Listen to Notifications (users/{userId}/notifications)
     unsubs.push(
       onSnapshot(collection(db, "users", user.uid, "notifications"), (snapshot) => {
-          setNotifications(
-            snapshot.docs
-              .map((d) => ({ id: d.id, ...d.data() }))
-              .sort(
-                (a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0),
-              ),
-          );
-        }, (error) => console.error("Notifications snapshot error:", error)),
+          setNotifications1(snapshot.docs.map(mapNotification));
+        }, (error) => console.error("Notifications 1 snapshot error:", error)),
+    );
+
+    // Listen to userNotifications (where userId == currentUser.uid)
+    unsubs.push(
+      onSnapshot(query(collection(db, "userNotifications"), where("userId", "==", user.uid)), (snapshot) => {
+          setNotifications2(snapshot.docs.map(mapNotification));
+        }, (error) => console.error("Notifications 2 snapshot error:", error)),
+    );
+
+    // Listen to notifications (where customerId == currentUser.uid)
+    unsubs.push(
+      onSnapshot(query(collection(db, "notifications"), where("customerId", "==", user.uid)), (snapshot) => {
+          setNotifications3(snapshot.docs.map(mapNotification));
+        }, (error) => console.error("Notifications 3 snapshot error:", error)),
     );
 
     // User profile data (favorites, address, phone)
@@ -329,6 +458,29 @@ export default function MainAppScreen() {
 
   return (
     <div className="flex h-[100dvh] w-full bg-light-bg overflow-hidden">
+      {pinAlertModal && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 duration-200 relative">
+            <button onClick={() => setPinAlertModal(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              <Plus size={24} className="rotate-45" />
+            </button>
+            <div className="w-16 h-16 bg-brand-yellow/20 text-brand-yellow rounded-full flex items-center justify-center mx-auto mb-4">
+              <Bell size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-dark-bg mb-2">Delivery PIN</h2>
+            <p className="text-gray-600 mb-6">Your requested order delivery PIN is:</p>
+            <div className="bg-gray-50 rounded-xl py-4 border border-gray-100 mb-6">
+              <span className="text-4xl font-black text-dark-bg tracking-widest">{pinAlertModal}</span>
+            </div>
+            <button
+              onClick={() => setPinAlertModal(null)}
+              className="w-full py-3.5 bg-brand-yellow text-dark-bg font-bold rounded-xl hover:opacity-90 transition-opacity"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
       {/* Desktop Sidebar Navigation */}
       <div className="hidden md:flex flex-col w-64 bg-brand-yellow border-r border-brand-yellow/20 z-30 shadow-sm relative">
         <div className="px-6 py-6 border-b border-brand-yellow/20">
@@ -452,7 +604,7 @@ export default function MainAppScreen() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto pb-20 md:pb-6 scrollbar-hide md:px-4 lg:px-8">
+        <div className="flex-1 overflow-y-auto pb-6 scrollbar-hide md:px-4 lg:px-8">
           <div className="w-full max-w-7xl mx-auto">
             {selectedItem === "Home" && (
               <HomeScreen
@@ -555,7 +707,7 @@ export default function MainAppScreen() {
         </div>
 
         {/* Bottom Navigation (Mobile Only) */}
-        <div className="md:hidden bg-white border-t border-gray-100 flex justify-around items-center h-[60px] absolute bottom-0 w-full z-20 px-4">
+        <div className="md:hidden bg-white border-t border-gray-100 flex justify-around items-center h-[60px] w-full z-20 px-4 shrink-0">
           {bottomNavItems.map((item, index) => {
             const isSelected =
               selectedItem === item.title ||
@@ -1272,7 +1424,7 @@ function ProductDetailScreen({
         ]);
 
   return (
-    <div className="flex flex-col w-full animate-in fade-in pb-20">
+    <div className="flex flex-col w-full animate-in fade-in pb-6">
       <div className="relative w-full h-[300px] md:h-[400px] bg-white">
         <button
           onClick={() => onNavigate("Back")}
@@ -1620,7 +1772,7 @@ function CartScreen({
   }
 
   return (
-    <div className="flex flex-col w-full p-4 h-full relative animate-in fade-in">
+    <div className="flex flex-col w-full p-4 min-h-full animate-in fade-in">
       <div className="bg-[#FFF9E6] rounded-xl p-3 flex mb-4">
         <MapPin size={20} className="text-[#FFC107] shrink-0 mr-2 mt-0.5" />
         <div>
@@ -1634,7 +1786,7 @@ function CartScreen({
         </div>
       </div>
 
-      <div className="space-y-3 flex-1 overflow-y-auto pb-48">
+      <div className="space-y-3 flex-1 pb-6">
         {cartItems.map((item: any, index: number) => (
           <div
             key={`${item.product.id}-${index}`}
@@ -1685,7 +1837,7 @@ function CartScreen({
         ))}
       </div>
 
-      <div className="bg-white p-4 absolute bottom-0 left-0 right-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-3xl border-t border-gray-100 z-10 pb-24 space-y-2">
+      <div className="bg-white p-4 sticky bottom-[-1rem] left-0 right-0 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] rounded-t-3xl border-t border-gray-100 z-10 space-y-2 mt-4 -mx-4">
         <div className="flex justify-between items-center text-sm text-gray-500">
           <span>Items Cost</span>
           <span>₹{getOrderItemsTotal(cartItems)}</span>
@@ -2256,7 +2408,7 @@ function ProfileScreen({
   };
 
   return (
-    <div className="flex flex-col w-full p-4 items-center animate-in fade-in pb-24 max-w-2xl w-full mx-auto">
+    <div className="flex flex-col w-full p-4 items-center animate-in fade-in pb-6 max-w-2xl w-full mx-auto">
       {!isEditing ? (
         <div className="flex flex-col items-center text-center w-full">
           <div className="w-24 h-24 bg-dark-bg text-[#FFC107] rounded-full flex items-center justify-center text-4xl font-bold mb-6 shadow-md overflow-hidden">

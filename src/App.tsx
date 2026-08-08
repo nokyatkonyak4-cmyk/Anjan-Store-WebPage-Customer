@@ -136,7 +136,7 @@ function AppRouter() {
 
   if (!isFirebaseConfigured) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-light-bg p-4 text-center">
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-light-bg p-4 text-center">
         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
           <h2 className="text-xl font-bold text-red-600 mb-4">
             Firebase Configuration Missing

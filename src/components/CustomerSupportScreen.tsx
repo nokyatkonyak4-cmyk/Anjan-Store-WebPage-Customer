@@ -34,7 +34,7 @@ export default function CustomerSupportScreen() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen max-w-2xl w-full mx-auto bg-white shadow-2xl relative animate-in slide-in-from-right">
+    <div className="flex flex-col min-h-[100dvh] max-w-2xl w-full mx-auto bg-white shadow-2xl relative animate-in slide-in-from-right">
       <div className="bg-[#FFC107] text-dark-bg px-4 py-4 flex items-center shadow-sm sticky top-0 z-20">
         <button onClick={() => navigate(-1)} className="mr-3">
           <ArrowLeft size={24} />
