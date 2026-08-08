@@ -52,8 +52,8 @@ export default function OrderTrackingScreen() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Hardcoded store location
-  const storeLat = 26.2006;
-  const storeLng = 92.9376;
+  const storeLat = 26.9557061;
+  const storeLng = 95.0573323;
 
   useEffect(() => {
     const deleteNotification = async () => {
@@ -157,7 +157,11 @@ export default function OrderTrackingScreen() {
   };
 
   const handleVerifyPin = () => {
-    if (enteredPin === order?.deliveryOtp) {
+    if (!enteredPin || enteredPin.trim() === "" || enteredPin.length !== 4) {
+      alert("Please enter a valid 4-digit PIN.");
+      return;
+    }
+    if (String(enteredPin) === String(order?.deliveryOtp)) {
       setPinVerified(true);
     } else {
       alert("delivery confirmation PIN is Incorrect.");
