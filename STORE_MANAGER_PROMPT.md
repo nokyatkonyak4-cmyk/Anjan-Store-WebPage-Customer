@@ -5,7 +5,7 @@ Copy and paste the following prompt into a **new AI Studio project** to generate
 ## Prompt to Copy
 
 ```text
-Build a Store Manager Dashboard for "Anjan Store". This dashboard is for store managers to review and manage incoming customer orders from the main app.
+Build a Store Manager Dashboard for "Anjan Store". This dashboard is for store managers to review and manage incoming customer orders, as well as manage the products and categories available in the customer app.
 
 Please connect to Firebase and use the exact same Firestore database.
 
@@ -24,11 +24,15 @@ Please connect to Firebase and use the exact same Firestore database.
 5. **Payment Method**: The final payment happens at the door. When marking an order as "Delivered" (either by the manager or a rider view), the manager must select the final `paymentMethod` ("Cash" or "Pay Online") and set `paymentStatus` to "Completed".
 
 ### Required Features:
-1. **Live Order Feed**: Real-time list of all orders using Firestore `onSnapshot` on the "orders" collection, ordered by `createdAt` desc.
-2. **Order Details View**: Show customer name, phone, address, items, item total, and delivery fee.
-3. **Delivery Fee Input**: For "Pending Approval" orders, provide an input field to set the `deliveryFee` and a button to "Send Final Bill" (updates status to "Bill Sent").
-4. **Status Updater**: A dropdown or series of buttons to update the order status as it moves through the pipeline.
-5. **Delivery Completion**: If an order is "Out for Delivery", show a "Complete Delivery" modal that optionally asks for the 4-digit Delivery PIN (must match `deliveryOtp`) and the chosen payment method (Cash or Online), then updates status to "Delivered".
+1. **Catalog Management**: 
+   - A section to view, add, edit, and delete "categories". (Fields: `id`, `name`, `icon`, `color`, `isActive`)
+   - A section to view, add, edit, and delete "products". (Fields: `id`, `name`, `description`, `price`, `unit`, `originalPrice`, `categoryId`, `stockQuantity`, `isActive`, `image`)
+   - A section to view, add, edit, and delete "banners". (Fields: `id`, `title`, `subtitle`, `image`, `isActive`)
+2. **Live Order Feed**: Real-time list of all orders using Firestore `onSnapshot` on the "orders" collection, ordered by `createdAt` desc.
+3. **Order Details View**: Show customer name, phone, address, items, item total, and delivery fee.
+4. **Delivery Fee Input**: For "Pending Approval" orders, provide an input field to set the `deliveryFee` and a button to "Send Final Bill" (updates status to "Bill Sent").
+5. **Status Updater**: A dropdown or series of buttons to update the order status as it moves through the pipeline.
+6. **Delivery Completion**: If an order is "Out for Delivery", show a "Complete Delivery" modal that optionally asks for the 4-digit Delivery PIN (must match `deliveryOtp`) and the chosen payment method (Cash or Online), then updates status to "Delivered".
 
 ### Firestore Data Structure:
 Collection: `orders`
