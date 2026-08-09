@@ -33,7 +33,7 @@ function AppRouter() {
         }
       }
       initialLoadRef.current = false;
-    }, (error) => console.error("Settings snapshot error:", error));
+    }, (error) => console.warn("Settings snapshot error:", error?.message));
 
     return () => unsub();
   }, []);

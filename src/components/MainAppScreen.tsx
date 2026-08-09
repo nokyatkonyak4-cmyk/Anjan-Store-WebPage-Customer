@@ -205,7 +205,7 @@ export default function MainAppScreen() {
               .filter((c) => c.isActive !== false)
           );
         },
-        (error) => console.error("Categories snapshot error:", error)
+        (error) => console.warn("Categories snapshot error:", error?.message)
       )
     );
 
@@ -220,7 +220,7 @@ export default function MainAppScreen() {
               .filter((p) => p.isActive !== false && p.stockQuantity > 0)
           );
         },
-        (error) => console.error("Products snapshot error:", error)
+        (error) => console.warn("Products snapshot error:", error?.message)
       )
     );
 
@@ -235,7 +235,7 @@ export default function MainAppScreen() {
               .filter((b) => b.isActive !== false)
           );
         },
-        (error) => console.error("Banners snapshot error:", error)
+        (error) => console.warn("Banners snapshot error:", error?.message)
       )
     );
 
@@ -245,7 +245,7 @@ export default function MainAppScreen() {
         if (docSnap.exists()) {
           setStoreSettings(docSnap.data() as any);
         }
-      }, (error) => console.error("Settings snapshot error:", error)),
+      }, (error) => console.warn("Settings snapshot error:", error?.message)),
     );
 
     // Listen to Orders
@@ -349,7 +349,7 @@ export default function MainAppScreen() {
               }
             }
           });
-        }, (error) => console.error("Orders snapshot error:", error)),
+        }, (error) => console.warn("Orders snapshot error:", error?.message)),
     );
 
     const mapNotification = (d: any) => {
@@ -367,21 +367,21 @@ export default function MainAppScreen() {
     unsubs.push(
       onSnapshot(collection(db, "users", user.uid, "notifications"), (snapshot) => {
           setNotifications1(snapshot.docs.map(mapNotification));
-        }, (error) => console.error("Notifications 1 snapshot error:", error)),
+        }, (error) => { console.warn("Notifications 1 snapshot error:", error.message); if(error.code === "permission-denied") alert("Permission Denied: Please deploy the Firebase Security Rules from firestore.rules to your Firebase project to enable Notifications."); }),
     );
 
     // Listen to userNotifications (where userId == currentUser.uid)
     unsubs.push(
       onSnapshot(query(collection(db, "userNotifications"), where("userId", "==", user.uid)), (snapshot) => {
           setNotifications2(snapshot.docs.map(mapNotification));
-        }, (error) => console.error("Notifications 2 snapshot error:", error)),
+        }, (error) => { console.warn("Notifications 2 snapshot error:", error.message); }),
     );
 
     // Listen to notifications (where customerId == currentUser.uid)
     unsubs.push(
       onSnapshot(query(collection(db, "notifications"), where("customerId", "==", user.uid)), (snapshot) => {
           setNotifications3(snapshot.docs.map(mapNotification));
-        }, (error) => console.error("Notifications 3 snapshot error:", error)),
+        }, (error) => { console.warn("Notifications 3 snapshot error:", error.message); }),
     );
 
     // User profile data (favorites, address, phone)
@@ -397,7 +397,7 @@ export default function MainAppScreen() {
             setCartItems(data.cartItems);
           }
         }
-      }, (error) => console.error("User snapshot error:", error)),
+      }, (error) => console.warn("User snapshot error:", error?.message)),
     );
 
     return () => unsubs.forEach((u) => u());
@@ -1360,7 +1360,7 @@ function ProductDetailScreen({
     const q = query(collection(db, "products", product.id, "reviews"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    }, (error) => console.error("Reviews snapshot error:", error));
+    }, (error) => console.warn("Reviews snapshot error:", error?.message));
     return () => unsub();
   }, [product?.id]);
 
@@ -1774,7 +1774,7 @@ console.log("Placing order to db:", db.app.options.projectId, db.app.name, db.ty
       onNavigate("Orders");
     } catch (e: any) {
       console.error(e);
-      alert("Failed to place order: " + (e.message || "Unknown error"));
+      alert("Permission Denied: Please go to your Firebase Console -> Firestore Database -> Rules, and paste the rules from the firestore.rules file.\n\nDetailed Error: " + (e.message || "Unknown error"));
     }
   };
 
