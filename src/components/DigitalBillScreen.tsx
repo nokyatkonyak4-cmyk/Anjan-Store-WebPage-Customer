@@ -156,7 +156,7 @@ export default function DigitalBillScreen() {
     (acc, item) => acc + item.price * item.quantity,
     0,
   );
-  const grandTotal = order.totalBill || (subtotal + (order.handlingFee || 0) + (order.deliveryFee || 0));
+  const grandTotal = order.totalBill || (subtotal + (order.platformFee || order.handlingFee || 0) + (order.deliveryFee || 0));
 
   return (
     <div className="flex flex-col min-h-[100dvh] max-w-2xl w-full mx-auto bg-[#F8F9FA] relative animate-in slide-in-from-right">
@@ -205,7 +205,7 @@ export default function DigitalBillScreen() {
           <div className="flex w-full justify-between py-1">
             <span className="text-gray-500 text-[14px]">Handling Fee</span>
             <span className="text-[#0F172A] text-[14px]">
-              ₹{(order.handlingFee || 0).toFixed(2)}
+              ₹{(order.platformFee || order.handlingFee || 0).toFixed(2)}
             </span>
           </div>
           <div className="flex w-full justify-between py-1">

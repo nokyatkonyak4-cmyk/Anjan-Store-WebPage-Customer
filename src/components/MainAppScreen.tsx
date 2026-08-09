@@ -30,6 +30,7 @@ import {
   Bike,
   Store,
   History,
+  Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AuthScreen from "./AuthScreen";
@@ -47,6 +48,7 @@ import {
   serverTimestamp,
   getDoc,
   orderBy,
+  deleteDoc,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import SecondaryBannerSlider, { CampaignSlide } from "./SecondaryBannerSlider";
@@ -109,26 +111,7 @@ export default function MainAppScreen() {
   }, [notifications1, notifications2, notifications3]);
 
   const previousOrderStatuses = React.useRef<Record<string, string>>({});
-  const [pinAlertModal, setPinAlertModal] = useState<string | null>(null);
-  const seenPinNotifications = React.useRef(new Set<string>());
 
-  useEffect(() => {
-    notifications.forEach((notif) => {
-      if (!seenPinNotifications.current.has(notif.id)) {
-        seenPinNotifications.current.add(notif.id);
-        const msg = String(notif.message || "");
-        const title = String(notif.title || "");
-        const isRead = notif.isRead || false;
-        
-        if (!isRead && (title.toLowerCase().includes("resend_pin") || msg.toLowerCase().includes("resend_pin"))) {
-          const match = msg.match(/\b\d{4}\b/);
-          if (match) {
-            setPinAlertModal(match[0]);
-          }
-        }
-      }
-    });
-  }, [notifications]);
 
   // User Profile
   const [savedAddress, setSavedAddress] = useState("");
@@ -332,9 +315,9 @@ export default function MainAppScreen() {
 
                 if (alertMsg) {
                     const notifText = alertPin ? `${alertMsg} \nPIN: ${alertPin}` : alertMsg;
-                    const notifRef1 = doc(collection(db, "users", user.uid, "notifications"));
+                    const notifRef = doc(collection(db, "users", user.uid, "notifications"));
                     const notifData = {
-                      id: notifRef1.id,
+                      id: notifRef.id,
                       title: "Order Update",
                       message: notifText,
                       timestamp: Date.now(),
@@ -343,9 +326,8 @@ export default function MainAppScreen() {
                       userId: user.uid,
                       customerId: user.uid
                     };
-                    
-                    setDoc(notifRef1, notifData).catch(console.error);
-                    const notifRef2 = doc(collection(db, "userNotifications"), notifRef1.id);
+                    setDoc(notifRef, notifData).catch(console.error);
+                    const notifRef2 = doc(collection(db, "notifications"));
                     setDoc(notifRef2, notifData).catch(console.error);
                 }
               }
@@ -458,29 +440,7 @@ export default function MainAppScreen() {
 
   return (
     <div className="flex h-[100dvh] w-full bg-light-bg overflow-hidden">
-      {pinAlertModal && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 duration-200 relative">
-            <button onClick={() => setPinAlertModal(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-              <Plus size={24} className="rotate-45" />
-            </button>
-            <div className="w-16 h-16 bg-brand-yellow/20 text-brand-yellow rounded-full flex items-center justify-center mx-auto mb-4">
-              <Bell size={32} />
-            </div>
-            <h2 className="text-2xl font-bold text-dark-bg mb-2">Delivery PIN</h2>
-            <p className="text-gray-600 mb-6">Your requested order delivery PIN is:</p>
-            <div className="bg-gray-50 rounded-xl py-4 border border-gray-100 mb-6">
-              <span className="text-4xl font-black text-dark-bg tracking-widest">{pinAlertModal}</span>
-            </div>
-            <button
-              onClick={() => setPinAlertModal(null)}
-              className="w-full py-3.5 bg-brand-yellow text-dark-bg font-bold rounded-xl hover:opacity-90 transition-opacity"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
+
       {/* Desktop Sidebar Navigation */}
       <div className="hidden md:flex flex-col w-64 bg-brand-yellow border-r border-brand-yellow/20 z-30 shadow-sm relative">
         <div className="px-6 py-6 border-b border-brand-yellow/20">
@@ -1711,7 +1671,7 @@ function CartScreen({
   };
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [deliveryType, setDeliveryType] = useState("Instant delivery");
+  const [deliveryType, setDeliveryType] = useState("Instant");
 
   const handleCheckout = async () => {
     if (!savedAddress || !savedPhone) {
@@ -1724,33 +1684,72 @@ function CartScreen({
 
     if (!auth?.currentUser || !db) return;
 
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    
-    // Example Usage during Checkout Submission:
-    const finalOrderPayload = {
-      customerId: auth.currentUser.uid,
-      customerName: auth.currentUser.displayName || "Customer",
-      phone: savedPhone,
-      address: savedAddress,
-      items: cartItems.map((i: any) => ({
-        productId: i.product.id,
-        name: i.product.name,
-        price: i.product.price,
-        quantity: i.quantity,
-      })),
-      totalPrice: getOrderItemsTotal(cartItems),
-      handlingFee: handlingFee,
-      deliveryFee: deliveryFee,
-      totalBill: getGrandTotal(cartItems), // Always exactly Items + Handling + Delivery
-      deliveryType,
-      status: "Pending Approval",
-      deliveryOtp: otp,
+    const paymentMethod = "Cash on Delivery"; // Can be dynamic if you have a payment selector
+
+    const productsTotal = getOrderItemsTotal(cartItems);
+    const platformFee = handlingFee;
+    const finalDeliveryFee = deliveryFee;
+    const totalBill = productsTotal + finalDeliveryFee + platformFee;
+
+    const formattedItems = cartItems.map((item: any) => ({
+      id: String(item.product?.id || item.id),
+      name: item.product?.name || item.name || item.title || "Product",
+      quantity: Number(item.quantity) || 1,
+      price: Number(item.product?.price || item.price) || 0
+    }));
+
+    const orderPayload = {
+      status: 'Placed',
       createdAt: serverTimestamp(),
-      createdAtMs: Date.now(),
+      createdAtMs: Date.now(), // Critical for Admin Panel real-time sorting
+      
+      // Customer Info
+      customerName: auth.currentUser.displayName || user?.name || 'Customer',
+      phone: savedPhone || '',
+      address: savedAddress || '',
+      customerEmail: auth.currentUser.email || user?.email || '',
+      userId: auth.currentUser.uid || '',
+      fcmToken: '', 
+      
+      // Order Items
+      items: formattedItems,
+      itemsCount: formattedItems.length,
+      
+      // Pricing
+      productsTotal,
+      deliveryFee: finalDeliveryFee,
+      platformFee,
+      totalBill,
+      totalPrice: totalBill, // Fallback field
+      
+      // Delivery & Payment Settings
+      deliveryType, // Will be 'Instant', '1 Day', or '1 Week'
+      paymentMethod: paymentMethod || 'Cash on Delivery',
+      paymentStatus: paymentMethod === 'Cash on Delivery' ? 'Pending' : 'Paid',
+      
+      // Default required fields for Admin dispatch routing
+      distanceStr: '',
+      deliveryTimeStr: 'N/A',
+      deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(), // 4-digit OTP for delivery boy
+      deliveryBoyId: ''
     };
 
     try {
-      await addDoc(collection(db, "orders"), finalOrderPayload);
+      const orderRef = await addDoc(collection(db, 'orders'), orderPayload);
+      
+      const notifRef = doc(collection(db, "users", auth.currentUser.uid, "notifications"));
+      const notifData = {
+        id: notifRef.id,
+        title: "Order Placed Successfully",
+        message: `Your order #${orderRef.id.substring(0, 6).toUpperCase()} has been placed successfully and is pending approval.`,
+        timestamp: Date.now(),
+        createdAt: Date.now(),
+        isRead: false,
+        userId: auth.currentUser.uid,
+        customerId: auth.currentUser.uid
+      };
+      await setDoc(notifRef, notifData);
+
       setCartItems([]);
       setShowConfirm(false);
       onNavigate("Orders");
@@ -1872,31 +1871,31 @@ function CartScreen({
                 <input
                   type="radio"
                   name="delivery"
-                  checked={deliveryType === "Instant delivery"}
-                  onChange={() => setDeliveryType("Instant delivery")}
+                  checked={deliveryType === "Instant"}
+                  onChange={() => setDeliveryType("Instant")}
                   className="w-4 h-4 text-brand-yellow focus:ring-brand-yellow"
                 />
-                <span className="text-sm font-medium">⚡ Instant delivery</span>
+                <span className="text-sm font-medium">⚡ Instant</span>
               </label>
               <label className="flex items-center space-x-3 cursor-pointer">
                 <input
                   type="radio"
                   name="delivery"
-                  checked={deliveryType === "1 day delivery"}
-                  onChange={() => setDeliveryType("1 day delivery")}
+                  checked={deliveryType === "1 Day"}
+                  onChange={() => setDeliveryType("1 Day")}
                   className="w-4 h-4 text-brand-yellow focus:ring-brand-yellow"
                 />
-                <span className="text-sm font-medium">📦 1 day delivery</span>
+                <span className="text-sm font-medium">📦 1 Day</span>
               </label>
               <label className="flex items-center space-x-3 cursor-pointer">
                 <input
                   type="radio"
                   name="delivery"
-                  checked={deliveryType === "1 week delivery"}
-                  onChange={() => setDeliveryType("1 week delivery")}
+                  checked={deliveryType === "1 Week"}
+                  onChange={() => setDeliveryType("1 Week")}
                   className="w-4 h-4 text-brand-yellow focus:ring-brand-yellow"
                 />
-                <span className="text-sm font-medium">🚚 1 week delivery</span>
+                <span className="text-sm font-medium">🚚 1 Week</span>
               </label>
             </div>
 
@@ -1983,7 +1982,7 @@ function OrdersScreen({ orders }: any) {
       ) : (
         <div className="space-y-6 pb-6 mt-2">
           {activeOrders.map((order: any, index: number) => {
-            const total = order.totalBill || ((order.totalPrice || order.total || 0) + (order.handlingFee || 0) + (order.deliveryFee || 0));
+            const total = order.totalBill || ((order.totalPrice || order.total || 0) + (order.platformFee || order.handlingFee || 0) + (order.deliveryFee || 0));
             return (
               <div
                 key={`${order.id}-${index}`}
@@ -2065,7 +2064,7 @@ function OrdersScreen({ orders }: any) {
                   <div className="flex justify-between text-xs text-gray-400 pt-1">
                     <span>Handling Fee</span>
                     <span className="font-bold text-dark-bg">
-                      ₹{order.handlingFee || 0}
+                      ₹{order.platformFee || order.handlingFee || 0}
                     </span>
                   </div>
                   <div className="flex justify-between text-xs text-gray-400 pt-1">
@@ -2113,7 +2112,7 @@ function OrderHistoryScreen({ orders, onNavigate, onLeaveFeedback }: any) {
       ) : (
         <div className="space-y-4 pb-6 mt-2">
           {pastOrders.map((order: any, index: number) => {
-            const total = order.totalBill || ((order.totalPrice || order.total || 0) + (order.handlingFee || 0) + (order.deliveryFee || 0));
+            const total = order.totalBill || ((order.totalPrice || order.total || 0) + (order.platformFee || order.handlingFee || 0) + (order.deliveryFee || 0));
             return (
               <div
                 key={`${order.id}-${index}`}
@@ -2162,7 +2161,7 @@ function OrderHistoryScreen({ orders, onNavigate, onLeaveFeedback }: any) {
                   <div className="flex justify-between text-xs text-gray-400 pt-1">
                     <span>Handling Fee</span>
                     <span className="font-bold text-dark-bg">
-                      ₹{order.handlingFee || 0}
+                      ₹{order.platformFee || order.handlingFee || 0}
                     </span>
                   </div>
                   <div className="flex justify-between text-xs text-gray-400 pt-1">
@@ -2248,14 +2247,40 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
   const handleNotificationClick = async (notif: any) => {
     if (!notif.isRead && auth?.currentUser) {
       try {
-        await updateDoc(
-          doc(db, "users", auth.currentUser.uid, "notifications", notif.id),
-          {
-            isRead: true,
-          },
-        );
+        const ref1 = doc(db, "users", auth.currentUser.uid, "notifications", notif.id);
+        const ref2 = doc(db, "notifications", notif.id);
+        const ref3 = doc(db, "userNotifications", notif.id);
+        
+        const updatePromises = [];
+        
+        try { updatePromises.push(updateDoc(ref1, { isRead: true })); } catch(e){}
+        try { updatePromises.push(updateDoc(ref2, { isRead: true })); } catch(e){}
+        try { updatePromises.push(updateDoc(ref3, { isRead: true })); } catch(e){}
+        
+        await Promise.allSettled(updatePromises);
       } catch (e) {
         console.error("Error marking notification as read:", e);
+      }
+    }
+  };
+
+  const handleDeleteNotification = async (notif: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (auth?.currentUser) {
+      try {
+        const ref1 = doc(db, "users", auth.currentUser.uid, "notifications", notif.id);
+        const ref2 = doc(db, "notifications", notif.id);
+        const ref3 = doc(db, "userNotifications", notif.id);
+        
+        const deletePromises = [];
+        
+        try { deletePromises.push(deleteDoc(ref1)); } catch(e){}
+        try { deletePromises.push(deleteDoc(ref2)); } catch(e){}
+        try { deletePromises.push(deleteDoc(ref3)); } catch(e){}
+        
+        await Promise.allSettled(deletePromises);
+      } catch (e) {
+        console.error("Error deleting notification:", e);
       }
     }
   };
@@ -2269,6 +2294,14 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
         <ArrowLeft size={24} className="text-dark-bg mr-3" />
         <h2 className="text-xl font-bold text-dark-bg">Notifications</h2>
       </div>
+      
+      {notifications?.length > 20 && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm flex flex-col gap-1 animate-pulse">
+            <span className="font-bold flex items-center gap-2"><Info size={16} /> Storage limit approaching</span>
+            <span>You have more than 20 notifications. Please delete older notifications to save space.</span>
+        </div>
+      )}
+
       {!notifications || notifications.length === 0 ? (
         <div className="flex-1 flex items-center justify-center text-gray-400 mt-20">
           No new notifications
@@ -2282,12 +2315,21 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
               className={`p-4 rounded-xl border cursor-pointer transition-colors ${notif.isRead ? "bg-white border-gray-100" : "bg-[#FFF9E6] border-yellow-200 hover:bg-yellow-50"}`}
             >
               <div className="flex justify-between items-start mb-1">
-                <h4 className="font-bold text-dark-bg text-sm">
-                  {notif.title}
-                </h4>
-                {!notif.isRead && (
-                  <span className="w-2 h-2 rounded-full bg-red-500 mt-1"></span>
-                )}
+                <div className="flex items-center gap-2">
+                  <h4 className="font-bold text-dark-bg text-sm">
+                    {notif.title}
+                  </h4>
+                  {!notif.isRead && (
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  )}
+                </div>
+                <button 
+                  onClick={(e) => handleDeleteNotification(notif, e)} 
+                  className="text-gray-400 hover:text-red-500 p-1 -mt-1 -mr-1 rounded-md transition-colors"
+                  aria-label="Delete notification"
+                >
+                   <Trash2 size={16} />
+                </button>
               </div>
               <p className="text-xs text-gray-600 leading-relaxed mb-2">
                 {notif.message}
