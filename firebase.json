@@ -8,14 +8,8 @@
       "**/node_modules/**"
     ]
   },
-  "firestore": [
-    {
-      "database": "(default)",
-      "rules": "firestore.rules"
-    },
-    {
-      "database": "ai-studio-anjanstorewebpag-05e4b71f-336e-4b18-b2fe-fced7e8f3a19",
-      "rules": "firestore.rules"
-    }
-  ]
+  "firestore": {
+    "database": "ai-studio-anjanstorewebpag-05e4b71f-336e-4b18-b2fe-fced7e8f3a19",
+    "rules": "firestore.rules"
+  }
 }

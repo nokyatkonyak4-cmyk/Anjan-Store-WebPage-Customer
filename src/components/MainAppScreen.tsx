@@ -61,6 +61,22 @@ export default function MainAppScreen() {
   const [navHistory, setNavHistory] = useState<string[]>(["Home"]);
 
   const handleNavigate = (item: string) => {
+    if (item.startsWith("optimistic_read_")) {
+      const id = item.replace("optimistic_read_", "");
+      const updateFn = (prev: any[]) => prev.map(n => n.id === id ? { ...n, isRead: true } : n);
+      setNotifications1(updateFn);
+      setNotifications2(updateFn);
+      setNotifications3(updateFn);
+      return;
+    }
+    if (item.startsWith("optimistic_delete_")) {
+      const id = item.replace("optimistic_delete_", "");
+      const filterFn = (prev: any[]) => prev.filter(n => n.id !== id);
+      setNotifications1(filterFn);
+      setNotifications2(filterFn);
+      setNotifications3(filterFn);
+      return;
+    }
     if (item === "Back") {
       handleGoBack();
       return;
@@ -340,6 +356,7 @@ export default function MainAppScreen() {
       const data = d.data();
       return {
         id: d.id,
+        _path: d.ref.path,
         ...data,
         title: data.title || data.type || "Notification",
         message: data.message || data.body || data.text || data.content || ""
@@ -1690,6 +1707,7 @@ function CartScreen({
     const platformFee = handlingFee;
     const finalDeliveryFee = deliveryFee;
     const totalBill = productsTotal + finalDeliveryFee + platformFee;
+console.log("Placing order to db:", db.app.options.projectId, db.app.name, db.type);
 
     const formattedItems = cartItems.map((item: any) => ({
       id: String(item.product?.id || item.id),
@@ -1735,7 +1753,8 @@ function CartScreen({
     };
 
     try {
-      const orderRef = await addDoc(collection(db, 'orders'), orderPayload);
+      const sanitizedPayload = JSON.parse(JSON.stringify(orderPayload, (key, value) => value === undefined ? null : value));
+      const orderRef = await addDoc(collection(db, 'orders'), sanitizedPayload);
       
       const notifRef = doc(collection(db, "users", auth.currentUser.uid, "notifications"));
       const notifData = {
@@ -1753,9 +1772,9 @@ function CartScreen({
       setCartItems([]);
       setShowConfirm(false);
       onNavigate("Orders");
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Failed to place order");
+      alert("Failed to place order: " + (e.message || "Unknown error"));
     }
   };
 
@@ -2246,18 +2265,18 @@ function FavoritesScreen({
 function NotificationsScreen({ notifications, onNavigate }: any) {
   const handleNotificationClick = async (notif: any) => {
     if (!notif.isRead && auth?.currentUser) {
+      if (onNavigate) {
+         onNavigate("optimistic_read_" + notif.id);
+      }
       try {
         const ref1 = doc(db, "users", auth.currentUser.uid, "notifications", notif.id);
         const ref2 = doc(db, "notifications", notif.id);
         const ref3 = doc(db, "userNotifications", notif.id);
-        
-        const updatePromises = [];
-        
-        try { updatePromises.push(updateDoc(ref1, { isRead: true })); } catch(e){}
-        try { updatePromises.push(updateDoc(ref2, { isRead: true })); } catch(e){}
-        try { updatePromises.push(updateDoc(ref3, { isRead: true })); } catch(e){}
-        
-        await Promise.allSettled(updatePromises);
+        await Promise.allSettled([
+          setDoc(ref1, { isRead: true }, { merge: true }),
+          setDoc(ref2, { isRead: true }, { merge: true }),
+          setDoc(ref3, { isRead: true }, { merge: true })
+        ]);
       } catch (e) {
         console.error("Error marking notification as read:", e);
       }
@@ -2267,18 +2286,18 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
   const handleDeleteNotification = async (notif: any, e: React.MouseEvent) => {
     e.stopPropagation();
     if (auth?.currentUser) {
+      if (onNavigate) {
+         onNavigate("optimistic_delete_" + notif.id);
+      }
       try {
         const ref1 = doc(db, "users", auth.currentUser.uid, "notifications", notif.id);
         const ref2 = doc(db, "notifications", notif.id);
         const ref3 = doc(db, "userNotifications", notif.id);
-        
-        const deletePromises = [];
-        
-        try { deletePromises.push(deleteDoc(ref1)); } catch(e){}
-        try { deletePromises.push(deleteDoc(ref2)); } catch(e){}
-        try { deletePromises.push(deleteDoc(ref3)); } catch(e){}
-        
-        await Promise.allSettled(deletePromises);
+        await Promise.allSettled([
+          deleteDoc(ref1),
+          deleteDoc(ref2),
+          deleteDoc(ref3)
+        ]);
       } catch (e) {
         console.error("Error deleting notification:", e);
       }
