@@ -10,17 +10,13 @@ import SplashScreen from "./components/SplashScreen";
 import { auth, isFirebaseConfigured, db, messaging } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { onMessage, getToken } from "firebase/messaging";
+import { Toaster, toast } from 'react-hot-toast';
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
 
 function AppRouter() {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showSplashOverlay, setShowSplashOverlay] = useState(true);
-  const [toastMessage, setToastMessage] = useState<{
-    title: string;
-    body: string;
-    url?: string;
-  } | null>(null);
   const initialLoadRef = useRef(true);
 
   useEffect(() => {
@@ -50,14 +46,6 @@ function AppRouter() {
       if (currentUser && messaging && db) {
         if ("Notification" in window) {
           if (Notification.permission === "default") {
-            if (navigator.serviceWorker) {
-              const registrations = await navigator.serviceWorker.getRegistrations();
-              for (let reg of registrations) {
-                if (reg.active && reg.active.scriptURL.includes('firebase-messaging-sw.js')) {
-                  await reg.update();
-                }
-              }
-            }
             const permission = await Notification.requestPermission();
             if (permission === "granted") {
               console.log("Notification permission granted.");
@@ -71,10 +59,22 @@ function AppRouter() {
               });
               if (currentToken) {
                 console.log("FCM Token:", currentToken);
+                // 1. Save to the customer's profile document
                 await setDoc(
-                  doc(db, "users", currentUser.uid),
+                  doc(db, "customers", currentUser.uid),
                   { fcmToken: currentToken },
-                  { merge: true },
+                  { merge: true }
+                ).catch(err => console.warn('Customer doc update failed:', err));
+                
+                // 2. Also save to the fcmTokens collection (for global broadcasts)
+                await setDoc(
+                  doc(db, 'fcmTokens', currentToken),
+                  {
+                    token: currentToken,
+                    userId: currentUser.uid,
+                    role: 'customer',
+                    updatedAt: Date.now()
+                  }
                 );
               } else {
                 console.log(
@@ -97,32 +97,28 @@ function AppRouter() {
       const unsubscribe = onMessage(messaging, (payload) => {
         console.log("Message received. ", payload);
         const notificationTitle =
-          payload.notification?.title || payload.data?.title || "Update from Anjan Store";
+          payload.notification?.title || "Update from Anjan Store";
         const notificationOptions = {
-          body: payload.notification?.body || payload.data?.message || payload.data?.body || "You have a new message.",
+          body: payload.notification?.body || "You have a new message.",
           icon: "/AppIcon-512x512.png",
           data: payload.data,
         };
 
         // If the app is in the foreground, we can display a browser notification
         if (Notification.permission === "granted") {
-          try {
-            if (navigator.serviceWorker) {
-              navigator.serviceWorker.ready.then((registration) => {
-                registration.showNotification(notificationTitle, notificationOptions);
-              });
-            } else {
-              const notification = new Notification(notificationTitle, notificationOptions);
-              notification.onclick = (event) => {
-                event.preventDefault();
-                if (payload.data?.click_action === "OPEN_ORDER" && payload.data?.orderId) {
-                  window.location.href = `/track_order/${payload.data.orderId}`;
-                }
-              };
+          const notification = new Notification(
+            notificationTitle,
+            notificationOptions,
+          );
+          notification.onclick = (event) => {
+            event.preventDefault();
+            if (
+              payload.data?.click_action === "OPEN_ORDER" &&
+              payload.data?.orderId
+            ) {
+              window.location.href = `/track_order/${payload.data.orderId}`;
             }
-          } catch (e) {
-            console.error("Error showing notification:", e);
-          }
+          };
         }
 
         let targetUrl = "";
@@ -132,12 +128,24 @@ function AppRouter() {
         ) {
           targetUrl = `/track_order/${payload.data.orderId}`;
         }
-        setToastMessage({
-          title: notificationTitle,
-          body: notificationOptions.body,
-          url: targetUrl,
-        });
-        setTimeout(() => setToastMessage(null), 5000);
+        
+        toast(
+          (t) => (
+            <div 
+              className="cursor-pointer"
+              onClick={() => {
+                toast.dismiss(t.id);
+                if (targetUrl) {
+                  window.location.href = targetUrl;
+                }
+              }}
+            >
+              <h4 className="font-bold">{notificationTitle}</h4>
+              <p className="text-sm">{notificationOptions.body}</p>
+            </div>
+          ),
+          { duration: 5000 }
+        );
       });
 
       return () => {
@@ -201,21 +209,7 @@ function AppRouter() {
       {(showSplashOverlay || authLoading) && (
         <SplashScreen onSplashFinished={() => setShowSplashOverlay(false)} />
       )}
-
-      {toastMessage && (
-        <div
-          className="fixed top-4 right-4 z-50 bg-white border border-brand-yellow rounded-xl shadow-lg p-4 max-w-sm w-[90%] md:w-full animate-in slide-in-from-top-4 flex flex-col cursor-pointer"
-          onClick={() => {
-            if (toastMessage.url) {
-              window.location.href = toastMessage.url;
-            }
-            setToastMessage(null);
-          }}
-        >
-          <h4 className="font-bold text-dark-bg">{toastMessage.title}</h4>
-          <p className="text-sm text-gray-600 mt-1">{toastMessage.body}</p>
-        </div>
-      )}
+      <Toaster position="top-right" />
     </>
   );
 }

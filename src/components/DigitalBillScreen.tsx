@@ -25,6 +25,9 @@ interface Order {
   createdAt: string;
   phone: string;
   address: string;
+  totalBill?: number;
+  platformFee?: number;
+  handlingFee?: number;
 }
 
 export default function DigitalBillScreen() {

@@ -1,65 +1,40 @@
-self.addEventListener('install', function(event) {
-  self.skipWaiting();
-});
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
-self.addEventListener('activate', function(event) {
-  event.waitUntil(self.clients.claim());
-});
+const firebaseConfig = {
+  projectId: "gen-lang-client-0690213156",
+  appId: "1:408212829164:web:7e5677ae980e592d5986c9",
+  apiKey: "AIzaSyDKRVKnHVL6V0OdaqHTPqkBHXMfeTrs-qs",
+  authDomain: "gen-lang-client-0690213156.firebaseapp.com",
+  messagingSenderId: "408212829164",
+  storageBucket: "gen-lang-client-0690213156.firebasestorage.app"
+};
 
-self.addEventListener('push', function(event) {
-  if (event.data) {
-    try {
-      const payload = event.data.json();
-      console.log("[SW] Push Received.", payload);
-      
-      const data = payload.data || {};
-      const notification = payload.notification || {};
-      
-      // If the payload has a 'notification' object, the browser might automatically show it.
-      // To avoid duplicates, we can check if it's going to be shown.
-      // But actually, without the FCM SDK, the browser might NOT automatically show FCM notifications 
-      // unless it strictly follows the Web Push protocol for notifications.
-      // Let's always show it, and if there are duplicates, we can fix it later. 
-      // Right now, showing something is better than nothing.
-      
-      const title = notification.title || data.title || "Anjan Store Update";
-      const body = notification.body || data.message || data.body || "You have a new update.";
-      
-      let url = '/';
-      const orderId = data.orderId || notification.orderId;
-      if (data.click_action === 'OPEN_ORDER' && orderId) {
-          url = '/track_order/' + orderId;
-      } else if (orderId) {
-          url = '/digital_bill/' + orderId;
-      }
-      
-      const options = {
-        body: body,
-        icon: '/AppIcon-512x512.png',
-        data: {
-          url: url
-        }
-      };
-      
-      event.waitUntil(
-        self.registration.showNotification(title, options)
-      );
-    } catch (e) {
-      console.error('[SW] Error parsing push payload', e);
-      // Fallback
-      event.waitUntil(
-        self.registration.showNotification("Anjan Store Update", {
-          body: "You have a new message.",
-          icon: '/AppIcon-512x512.png'
-        })
-      );
-    }
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  const notificationTitle = payload.notification?.title || "Anjan Store Update";
+  
+  let url = '/';
+  if (payload.data?.click_action === 'OPEN_ORDER' && payload.data?.orderId) {
+      url = '/track_order/' + payload.data.orderId;
   }
+  
+  const notificationOptions = {
+    body: payload.notification?.body,
+    icon: '/AppIcon-512x512.png',
+    data: {
+      url: url
+    }
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  
   const urlToOpen = event.notification.data?.url || '/';
   
   event.waitUntil(

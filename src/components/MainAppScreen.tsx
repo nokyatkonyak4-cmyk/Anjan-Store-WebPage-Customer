@@ -67,7 +67,6 @@ export default function MainAppScreen() {
       setNotifications1(updateFn);
       setNotifications2(updateFn);
       setNotifications3(updateFn);
-      setNotifications4(updateFn);
       return;
     }
     if (item.startsWith("optimistic_delete_")) {
@@ -76,7 +75,6 @@ export default function MainAppScreen() {
       setNotifications1(filterFn);
       setNotifications2(filterFn);
       setNotifications3(filterFn);
-      setNotifications4(filterFn);
       return;
     }
     if (item === "Back") {
@@ -116,15 +114,14 @@ export default function MainAppScreen() {
   const [notifications1, setNotifications1] = useState<any[]>([]);
   const [notifications2, setNotifications2] = useState<any[]>([]);
   const [notifications3, setNotifications3] = useState<any[]>([]);
-  const [notifications4, setNotifications4] = useState<any[]>([]);
 
   const notifications = React.useMemo(() => {
-    const all = [...notifications1, ...notifications2, ...notifications3, ...notifications4];
+    const all = [...notifications1, ...notifications2, ...notifications3];
     const uniqueMap = new window.Map();
     all.forEach(n => {
-      if (!uniqueMap.has(n.message)) uniqueMap.set(n.message, n);
+      if (!uniqueMap.has(n.id)) uniqueMap.set(n.id, n);
     });
-    return Array.from(uniqueMap.values()).filter((n: any) => n.timestamp && !isNaN(new Date(n.timestamp).getTime()) && n.title !== "j" && n.title !== "Hello....." && n.message !== "j" && n.message !== "Hello.....").sort(
+    return Array.from(uniqueMap.values()).sort(
       (a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0)
     );
   }, [notifications1, notifications2, notifications3]);
@@ -334,7 +331,7 @@ export default function MainAppScreen() {
 
                 if (alertMsg) {
                     const notifText = alertPin ? `${alertMsg} \nPIN: ${alertPin}` : alertMsg;
-                    const notifRef = doc(collection(db, "notifications"));
+                    const notifRef = doc(collection(db, "users", user.uid, "notifications"));
                     const notifData = {
                       id: notifRef.id,
                       title: "Order Update",
@@ -345,9 +342,7 @@ export default function MainAppScreen() {
                       userId: user.uid,
                       customerId: user.uid
                     };
-                    const notifRefUser = doc(db, "users", user.uid, "notifications", notifRef.id);
                     setDoc(notifRef, notifData).catch(console.error);
-                    setDoc(notifRefUser, notifData).catch(console.error);
                 }
               }
             }
@@ -371,7 +366,6 @@ export default function MainAppScreen() {
         ...data,
         timestamp: ts,
         title: data.title || data.type || "Notification",
-        isRead: data.isRead || (data.readBy && auth?.currentUser?.uid && data.readBy.includes(auth.currentUser.uid)) || data.read || false,
         message: data.message || data.body || data.text || data.content || ""
       };
     };
@@ -395,13 +389,6 @@ export default function MainAppScreen() {
       onSnapshot(query(collection(db, "notifications"), where("customerId", "==", user.uid)), (snapshot) => {
           setNotifications3(snapshot.docs.map(mapNotification));
         }, (error) => { console.warn("Notifications 3 snapshot error:", error.message); }),
-    );
-
-    // Listen to global notifications (where isGlobal == true)
-    unsubs.push(
-      onSnapshot(query(collection(db, "notifications"), where("isGlobal", "==", true)), (snapshot) => {
-          setNotifications4(snapshot.docs.map(mapNotification));
-        }, (error) => { console.warn("Notifications 4 snapshot error:", error.message); }),
     );
 
     // User profile data (favorites, address, phone)
@@ -2294,7 +2281,7 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
         const ref3 = doc(db, "userNotifications", notif.id);
         await Promise.allSettled([
           setDoc(ref1, { isRead: true }, { merge: true }),
-          setDoc(ref2, notif.isGlobal ? { readBy: arrayUnion(auth.currentUser.uid) } : { isRead: true }, { merge: true }),
+          setDoc(ref2, { isRead: true }, { merge: true }),
           setDoc(ref3, { isRead: true }, { merge: true })
         ]);
       } catch (e) {
