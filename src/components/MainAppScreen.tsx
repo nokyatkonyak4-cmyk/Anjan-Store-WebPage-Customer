@@ -367,7 +367,7 @@ export default function MainAppScreen() {
     unsubs.push(
       onSnapshot(collection(db, "users", user.uid, "notifications"), (snapshot) => {
           setNotifications1(snapshot.docs.map(mapNotification));
-        }, (error) => { console.warn("Notifications 1 snapshot error:", error.message); if(error.code === "permission-denied") alert("Permission Denied: Please deploy the Firebase Security Rules from firestore.rules to your Firebase project to enable Notifications."); }),
+        }, (error) => { console.warn("Notifications 1 snapshot error:", error?.message); }),
     );
 
     // Listen to userNotifications (where userId == currentUser.uid)
@@ -1774,7 +1774,7 @@ console.log("Placing order to db:", db.app.options.projectId, db.app.name, db.ty
       onNavigate("Orders");
     } catch (e: any) {
       console.error(e);
-      alert("Permission Denied: Please go to your Firebase Console -> Firestore Database -> Rules, and paste the rules from the firestore.rules file.\n\nDetailed Error: " + (e.message || "Unknown error"));
+      alert("Failed to place order: " + (e.message || "Unknown error"));
     }
   };
 
