@@ -1,10 +1,60 @@
 import React, { useState } from 'react';
 import { Search, ShoppingCart, Heart, ArrowLeft, Star, Plus, Minus } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import BannerSlider from './BannerSlider';
+import SecondaryBannerSlider, { CampaignSlide } from './SecondaryBannerSlider';
+
 
 export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, categories, banners, favorites, cartItems, toggleFavorite, incrementCart, decrementCart, storeSettings }: any) {
-    const featuredProducts = products.slice(0, 10);
+    const featuredProducts = products.slice(0, 8);
+    const popularProducts = products.slice(8, 16);
+    const remainingProducts = products.slice(16);
+    
+    const campaigns: CampaignSlide[] = [];
+    if (products.length > 0) {
+        const topSeller = products[0];
+        if (topSeller) {
+            campaigns.push({
+                id: `campaign_${topSeller.id}`,
+                title: "Top Seller",
+                subtitle: topSeller.name,
+                imageUrl: topSeller.imageUrls?.[0] || topSeller.imageUrl || "/AppIcon-512x512.png",
+                badgeText: "POPULAR",
+                badgeColor: "#4CAF50",
+                link: `Product_${topSeller.id}`
+            });
+        }
+        
+        const trendingIndex = Math.floor(products.length / 2);
+        const trending = products[trendingIndex] || products[1];
+        if (trending && trending.id !== topSeller?.id) {
+            campaigns.push({
+                id: `campaign_${trending.id}`,
+                title: "Trending Now",
+                subtitle: trending.name,
+                imageUrl: trending.imageUrls?.[0] || trending.imageUrl || "/AppIcon-512x512.png",
+                badgeText: "HOT",
+                badgeColor: "#FF5722",
+                link: `Product_${trending.id}`
+            });
+        }
+        
+        const newest = products[products.length - 1] || products[2];
+        if (newest && newest.id !== topSeller?.id && newest.id !== trending?.id) {
+            campaigns.push({
+                id: `campaign_${newest.id}`,
+                title: "New Arrivals",
+                subtitle: newest.name,
+                imageUrl: newest.imageUrls?.[0] || newest.imageUrl || "/AppIcon-512x512.png",
+                badgeText: "NEW",
+                badgeColor: "#2196F3",
+                link: `Product_${newest.id}`
+            });
+        }
+    }
+
+    
     return (
         <div className="flex flex-col space-y-6">
             <div className="relative">
@@ -37,24 +87,75 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
                 </div>
             </div>
 
+                        {campaigns.length > 0 && (
+            <div>
+                <SecondaryBannerSlider 
+                    slides={campaigns} 
+                    onSlideClick={(slide) => onNavigate(slide.link || 'Home')}
+                    autoSlideInterval={3000}
+                />
+            </div>
+            )}
+            
             <div>
                 <h2 className="text-lg font-bold text-dark-bg mb-4">Featured Products</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {featuredProducts.map((prod: any) => (
-                        <div key={prod.id} className="bg-white rounded-xl shadow-sm p-3 flex flex-col relative cursor-pointer" onClick={() => onNavigate(`Product_${prod.id}`)}>
-                            <img src={prod.imageUrls?.[0] || prod.imageUrl || "/AppIcon-512x512.png"} alt={prod.name} className="w-full h-32 object-contain mb-2" />
-                            <h3 className="text-sm font-bold truncate">{prod.name}</h3>
-                            <span className="text-xs text-gray-500 mb-2 truncate">{prod.category}</span>
-                            <div className="flex justify-between items-center mt-auto">
-                                <span className="font-bold text-dark-bg">₹{prod.price}</span>
-                                <button onClick={(e) => { e.stopPropagation(); incrementCart(prod); }} className="bg-brand-yellow text-dark-bg rounded-full p-1.5 shadow-sm transition-all active:scale-95 hover:opacity-90">
-                                    <Plus size={16} />
-                                </button>
-                            </div>
-                        </div>
+                        <ProductCard
+                            key={prod.id}
+                            product={prod}
+                            cartQuantity={cartItems.find((i: any) => i.product.id === prod.id)?.quantity || 0}
+                            isFavorite={favorites.includes(prod.id)}
+                            onToggleFavorite={() => toggleFavorite(prod.id)}
+                            onIncrement={incrementCart}
+                            onDecrement={decrementCart}
+                            onProductClick={() => onNavigate(`Product_${prod.id}`)}
+                        />
                     ))}
                 </div>
             </div>
+            
+            {popularProducts.length > 0 && (
+                <div>
+                    <h2 className="text-lg font-bold text-dark-bg mb-4">Popular Products</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {popularProducts.map((prod: any) => (
+                            <ProductCard
+                                key={prod.id}
+                                product={prod}
+                                cartQuantity={cartItems.find((i: any) => i.product.id === prod.id)?.quantity || 0}
+                                isFavorite={favorites.includes(prod.id)}
+                                onToggleFavorite={() => toggleFavorite(prod.id)}
+                                onIncrement={incrementCart}
+                                onDecrement={decrementCart}
+                                onProductClick={() => onNavigate(`Product_${prod.id}`)}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {remainingProducts.length > 0 && (
+                <div>
+                    <h2 className="text-lg font-bold text-dark-bg mb-4">All Products</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {remainingProducts.map((prod: any) => (
+                            <ProductCard
+                                key={prod.id}
+                                product={prod}
+                                cartQuantity={cartItems.find((i: any) => i.product.id === prod.id)?.quantity || 0}
+                                isFavorite={favorites.includes(prod.id)}
+                                onToggleFavorite={() => toggleFavorite(prod.id)}
+                                onIncrement={incrementCart}
+                                onDecrement={decrementCart}
+                                onProductClick={() => onNavigate(`Product_${prod.id}`)}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            <Footer />
         </div>
     );
 }
@@ -117,7 +218,7 @@ export function CategoriesScreen({ categories, onNavigate }: any) {
     );
 }
 
-export function FavoritesScreen({ favorites, products, onNavigate }: any) {
+export function FavoritesScreen({ favorites, products, onNavigate, cartItems, toggleFavorite, incrementCart, decrementCart }: any) {
     const favProducts = products.filter((p: any) => favorites.includes(p.id));
     return (
         <div className="p-4">
@@ -127,11 +228,16 @@ export function FavoritesScreen({ favorites, products, onNavigate }: any) {
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {favProducts.map((prod: any) => (
-                        <div key={prod.id} className="bg-white rounded-xl shadow-sm p-3 flex flex-col cursor-pointer" onClick={() => onNavigate(`Product_${prod.id}`)}>
-                            <img src={prod.imageUrls?.[0] || prod.imageUrl || "/AppIcon-512x512.png"} className="w-full h-32 object-contain mb-2" />
-                            <h3 className="text-sm font-bold truncate">{prod.name}</h3>
-                            <span className="font-bold text-dark-bg mt-auto">₹{prod.price}</span>
-                        </div>
+                        <ProductCard
+                            key={prod.id}
+                            product={prod}
+                            cartQuantity={cartItems?.find((i: any) => i.product.id === prod.id)?.quantity || 0}
+                            isFavorite={favorites.includes(prod.id)}
+                            onToggleFavorite={() => toggleFavorite(prod.id)}
+                            onIncrement={incrementCart}
+                            onDecrement={decrementCart}
+                            onProductClick={() => onNavigate(`Product_${prod.id}`)}
+                        />
                     ))}
                 </div>
             )}
@@ -160,26 +266,164 @@ export function ProductDetailsScreen({ productId, products, onNavigate, incremen
     );
 }
 
-export function CategoryScreen({ categoryId, products, categories, onNavigate, incrementCart }: any) {
+export function CategoryScreen({ categoryId, products, categories, onNavigate, cartItems, favorites, toggleFavorite, incrementCart, decrementCart }: any) {
     const category = categories.find((c: any) => c.id === categoryId);
     const catProducts = products.filter((p: any) => p.category === category?.name || p.categoryId === categoryId);
     return (
         <div className="p-4">
             <div className="flex items-center mb-6">
-                <button onClick={() => onNavigate("Categories")} className="mr-4"><ArrowLeft size={24}/></button>
+                <button onClick={() => onNavigate("Categories")} className="mr-4 transition-all active:scale-90 hover:opacity-80"><ArrowLeft size={24}/></button>
                 <h2 className="text-xl font-bold">{category?.name || "Category"}</h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {catProducts.map((prod: any) => (
-                    <div key={prod.id} className="bg-white rounded-xl shadow-sm p-3 flex flex-col cursor-pointer" onClick={() => onNavigate(`Product_${prod.id}`)}>
-                        <img src={prod.imageUrls?.[0] || prod.imageUrl || "/AppIcon-512x512.png"} className="w-full h-32 object-contain mb-2" />
-                        <h3 className="text-sm font-bold truncate">{prod.name}</h3>
-                        <div className="flex justify-between items-center mt-auto">
-                            <span className="font-bold text-dark-bg">₹{prod.price}</span>
-                            <button onClick={(e) => { e.stopPropagation(); incrementCart(prod); }} className="bg-brand-yellow p-1.5 rounded-full transition-all active:scale-95 hover:opacity-90"><Plus size={16}/></button>
-                        </div>
-                    </div>
+                    <ProductCard
+                        key={prod.id}
+                        product={prod}
+                        cartQuantity={cartItems?.find((i: any) => i.product.id === prod.id)?.quantity || 0}
+                        isFavorite={favorites?.includes(prod.id) || false}
+                        onToggleFavorite={() => toggleFavorite(prod.id)}
+                        onIncrement={incrementCart}
+                        onDecrement={decrementCart}
+                        onProductClick={() => onNavigate(`Product_${prod.id}`)}
+                    />
                 ))}
+            </div>
+        </div>
+    );
+}
+
+
+export function ProductCard({
+  product,
+  cartQuantity,
+  isFavorite,
+  onToggleFavorite,
+  onIncrement,
+  onDecrement,
+  onProductClick,
+}: any) {
+  const images = product.imageUrls || product.images || (product.imageUrl || product.image ? [product.imageUrl || product.image] : ["/AppIcon-512x512.png"]);
+  const extraImagesCount = images.length > 1 ? images.length - 1 : 0;
+  return (
+    <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-md overflow-hidden flex flex-col h-[200px] md:h-[250px] border border-gray-100 transition-all hover:-translate-y-1 relative">
+      <div
+        className="relative h-[100px] md:h-[130px] w-full shrink-0 p-1 flex items-center justify-center border-b border-gray-50 cursor-pointer"
+        onClick={() => onProductClick && onProductClick(product)}
+      >
+        <img
+          src={images[0]}
+          alt={product.name}
+          className="w-full h-full object-contain"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src =
+              "/AppIcon-512x512.png";
+          }}
+        />
+        {extraImagesCount > 0 && (
+          <div className="absolute bottom-2 left-2 bg-dark-bg/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center shadow-sm">
+            +{extraImagesCount} Photos
+          </div>
+        )}
+      </div>
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite();
+        }}
+        className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm z-10 border border-gray-100"
+      >
+        <Heart
+          size={14}
+          className={
+            isFavorite ? "fill-[#FFC107] text-[#FFC107]" : "text-gray-400"
+          }
+        />
+      </motion.button>
+      <div className="p-2 md:p-3 flex flex-col flex-1 justify-between">
+        <div
+          onClick={() => onProductClick && onProductClick(product)}
+          className="cursor-pointer"
+        >
+          <h3 className="font-bold text-dark-bg text-[11px] md:text-sm line-clamp-1 mb-1">
+            {product.name}
+          </h3>
+          <span className="inline-block text-[9px] md:text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-sm mb-1">
+            {product.category}
+          </span>
+        </div>
+        <div className="flex items-center justify-between mt-auto pt-1">
+          <span className="font-bold text-xs md:text-sm text-dark-bg">
+            ₹{product.price.toFixed(1)}
+          </span>
+          {cartQuantity > 0 ? (
+            <div className="flex items-center bg-brand-yellow/20 rounded-md border border-brand-yellow/30">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDecrement(product);
+                }}
+                className="w-6 h-6 flex items-center justify-center text-dark-bg font-bold"
+              >
+                -
+              </motion.button>
+              <span className="w-5 text-center text-[10px] md:text-xs font-bold text-dark-bg">
+                {cartQuantity}
+              </span>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onIncrement(product);
+                }}
+                className="w-6 h-6 flex items-center justify-center text-dark-bg font-bold"
+              >
+                +
+              </motion.button>
+            </div>
+          ) : (
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onIncrement(product);
+              }}
+              className="bg-white border border-brand-yellow text-brand-yellow text-[10px] md:text-[11px] font-bold px-3 py-1 rounded-md shadow-sm"
+            >
+              ADD
+            </motion.button>
+          )}
+      </div>
+      </div>
+    </div>
+  );
+}
+
+
+export function Footer() {
+    const navigate = useNavigate();
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-8 mb-4 flex flex-col items-center justify-center space-y-4">
+            <h3 className="font-bold text-lg text-dark-bg">Anjan Store</h3>
+            <p className="text-sm text-gray-500 text-center max-w-sm">Making your everyday life easier with the best products and fast delivery.</p>
+            
+            <div className="flex flex-wrap justify-center gap-4 text-sm font-medium">
+                <button onClick={() => navigate('/customer-support')} className="text-gray-600 hover:text-brand-yellow transition">Contact Us</button>
+                <button onClick={() => navigate('/static_page/about-us')} className="text-gray-600 hover:text-brand-yellow transition">About Us</button>
+                <button onClick={() => navigate('/static_page/privacy-policy')} className="text-gray-600 hover:text-brand-yellow transition">Privacy Policy</button>
+                <button onClick={() => navigate('/static_page/terms-conditions')} className="text-gray-600 hover:text-brand-yellow transition">Terms & Conditions</button>
+            </div>
+            
+            <div className="pt-4 border-t border-gray-100 w-full text-center">
+                <h4 className="font-black text-xl tracking-widest uppercase text-gray-300">Anjan Store</h4>
+                <p className="text-[10px] tracking-[0.2em] uppercase text-gray-400 mb-2">All In One Place</p>
+                <p className="text-xs text-gray-400 mb-4">Making your everyday life easier</p>
+                <p className="text-[10px] text-gray-300 mt-1 font-mono tracking-widest uppercase">
+                    crafted by: Nokyat Konyak (ninibuild)
+                </p>
             </div>
         </div>
     );

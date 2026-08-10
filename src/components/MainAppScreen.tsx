@@ -564,12 +564,12 @@ export default function MainAppScreen() {
 
         <div className="flex-1 overflow-y-auto pb-6 scrollbar-hide md:px-4 lg:px-8">
           <div className="w-full max-w-7xl mx-auto">
-             {selectedItem === 'Home' && <HomeScreen searchQuery={searchQuery} setSearchQuery={setSearchQuery} onNavigate={handleNavigate} products={products} categories={categories} banners={banners} favorites={favorites} cartItems={cartItems} incrementCart={incrementCart} decrementCart={decrementCart} storeSettings={storeSettings} />}
+             {selectedItem === 'Home' && <HomeScreen searchQuery={searchQuery} setSearchQuery={setSearchQuery} onNavigate={handleNavigate} products={products} categories={categories} banners={banners} favorites={favorites} cartItems={cartItems} incrementCart={incrementCart} decrementCart={decrementCart} storeSettings={storeSettings} toggleFavorite={toggleFavorite} />}
              {selectedItem === 'Cart' && <CartScreen cartItems={cartItems} setCartItems={setCartItems} incrementCart={incrementCart} decrementCart={decrementCart} onNavigate={handleNavigate} storeSettings={storeSettings} />}
              {selectedItem === 'Categories' && <CategoriesScreen categories={categories} onNavigate={handleNavigate} />}
-             {selectedItem === 'Favorites' && <FavoritesScreen favorites={favorites} products={products} onNavigate={handleNavigate} />}
+             {selectedItem === 'Favorites' && <FavoritesScreen favorites={favorites} products={products} onNavigate={handleNavigate} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
              {selectedItem.startsWith('Product_') && <ProductDetailsScreen productId={selectedItem.replace('Product_', '')} products={products} onNavigate={handleNavigate} incrementCart={incrementCart} />}
-             {selectedItem.startsWith('Category_') && <CategoryScreen categoryId={selectedItem.replace('Category_', '')} products={products} categories={categories} onNavigate={handleNavigate} incrementCart={incrementCart} />}
+             {selectedItem.startsWith('Category_') && <CategoryScreen categoryId={selectedItem.replace('Category_', '')} products={products} categories={categories} onNavigate={handleNavigate} cartItems={cartItems} favorites={favorites} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
              {selectedItem === 'Profile' && <ProfileScreen savedAddress={savedAddress} savedPhone={savedPhone} profileImage={profileImage} onNavigate={handleNavigate} />}
              {selectedItem === 'Notifications' && <NotificationsScreen notifications={notifications} onNavigate={handleNavigate} />}
           </div>
@@ -865,6 +865,44 @@ function ProfileScreen({
           >
             Logout
           </button>
+
+          <div className="mt-8 pt-6 border-t border-gray-100 w-full flex flex-col items-center space-y-4">
+            <h3 className="font-bold text-dark-bg">Anjan Store Information</h3>
+            <div className="w-full flex flex-col space-y-2">
+                <button onClick={() => navigate('/static_page/about-us')} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                    <span className="text-sm font-semibold text-gray-700">About Us</span>
+                    <ChevronRight size={16} className="text-gray-400" />
+                </button>
+                <button onClick={() => navigate('/static_page/frequently-asked-questions')} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                    <span className="text-sm font-semibold text-gray-700">FAQ</span>
+                    <ChevronRight size={16} className="text-gray-400" />
+                </button>
+                <button onClick={() => navigate('/customer-support')} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                    <span className="text-sm font-semibold text-gray-700">Customer Support</span>
+                    <ChevronRight size={16} className="text-gray-400" />
+                </button>
+                <button onClick={() => navigate('/static_page/shipping-delivery-policy')} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                    <span className="text-sm font-semibold text-gray-700">Shipping & Delivery Policy</span>
+                    <ChevronRight size={16} className="text-gray-400" />
+                </button>
+                <button onClick={() => navigate('/static_page/terms-conditions')} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                    <span className="text-sm font-semibold text-gray-700">Terms & Conditions</span>
+                    <ChevronRight size={16} className="text-gray-400" />
+                </button>
+                <button onClick={() => navigate('/static_page/privacy-policy')} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                    <span className="text-sm font-semibold text-gray-700">Privacy Policy</span>
+                    <ChevronRight size={16} className="text-gray-400" />
+                </button>
+            </div>
+            
+            <div className="w-full text-center mt-6 pt-6 opacity-60">
+                <h4 className="font-black text-xl tracking-widest uppercase text-gray-300">Anjan Store</h4>
+                <p className="text-[10px] tracking-[0.2em] uppercase text-gray-400 mb-2">All In One Place</p>
+                <p className="text-xs text-gray-400 mb-4">Making your everyday life easier</p>
+                <p className="text-[9px] text-gray-400">crafted by: Nokyat Konyak (ninibuild)</p>
+            </div>
+          </div>
+
         </div>
       ) : (
         <form onSubmit={handleSave} className="flex flex-col space-y-4 w-full">
@@ -973,110 +1011,4 @@ function ProfileScreen({
 
 // --- Shared Components ---
 
-function ProductCard({
-  product,
-  cartQuantity,
-  isFavorite,
-  onToggleFavorite,
-  onIncrement,
-  onDecrement,
-  onProductClick,
-}: any) {
-  const images = product.imageUrls || product.images || (product.imageUrl || product.image ? [product.imageUrl || product.image] : ["/AppIcon-512x512.png"]);
-  const extraImagesCount = images.length > 1 ? images.length - 1 : 0;
-  return (
-    <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-md overflow-hidden flex flex-col h-[200px] md:h-[250px] border border-gray-100 transition-all hover:-translate-y-1 relative">
-      <div
-        className="relative h-[100px] md:h-[130px] w-full shrink-0 p-1 flex items-center justify-center border-b border-gray-50 cursor-pointer"
-        onClick={() => onProductClick && onProductClick(product)}
-      >
-        <img
-          src={images[0]}
-          alt={product.name}
-          className="w-full h-full object-contain"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src =
-              "/AppIcon-512x512.png";
-          }}
-        />
-        {extraImagesCount > 0 && (
-          <div className="absolute bottom-2 left-2 bg-dark-bg/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center shadow-sm">
-            +{extraImagesCount} Photos
-          </div>
-        )}
-      </div>
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavorite();
-        }}
-        className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm z-10 border border-gray-100"
-      >
-        <Heart
-          size={14}
-          className={
-            isFavorite ? "fill-[#FFC107] text-[#FFC107]" : "text-gray-400"
-          }
-        />
-      </motion.button>
-      <div className="p-2 md:p-3 flex flex-col flex-1 justify-between">
-        <div
-          onClick={() => onProductClick && onProductClick(product)}
-          className="cursor-pointer"
-        >
-          <h3 className="font-bold text-dark-bg text-[11px] md:text-sm line-clamp-1 mb-1">
-            {product.name}
-          </h3>
-          <span className="inline-block text-[9px] md:text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-sm mb-1">
-            {product.category}
-          </span>
-        </div>
-        <div className="flex items-center justify-between mt-auto pt-1">
-          <span className="font-bold text-xs md:text-sm text-dark-bg">
-            ₹{product.price.toFixed(1)}
-          </span>
-          {cartQuantity > 0 ? (
-            <div className="flex items-center bg-brand-yellow/20 rounded-md border border-brand-yellow/30">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDecrement(product);
-                }}
-                className="w-6 h-6 flex items-center justify-center text-dark-bg font-bold"
-              >
-                -
-              </motion.button>
-              <span className="w-5 text-center text-[10px] md:text-xs font-bold text-dark-bg">
-                {cartQuantity}
-              </span>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onIncrement(product);
-                }}
-                className="w-6 h-6 flex items-center justify-center text-dark-bg font-bold"
-              >
-                +
-              </motion.button>
-            </div>
-          ) : (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onIncrement(product);
-              }}
-              className="bg-white border border-brand-yellow text-brand-yellow text-[10px] md:text-[11px] font-bold px-3 py-1 rounded-md shadow-sm"
-            >
-              ADD
-            </motion.button>
-          )}
-      </div>
-      </div>
-    </div>
-  );
-}
+
