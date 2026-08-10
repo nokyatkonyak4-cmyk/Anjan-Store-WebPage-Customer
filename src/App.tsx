@@ -50,6 +50,14 @@ function AppRouter() {
       if (currentUser && messaging && db) {
         if ("Notification" in window) {
           if (Notification.permission === "default") {
+            if (navigator.serviceWorker) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              for (let reg of registrations) {
+                if (reg.active && reg.active.scriptURL.includes('firebase-messaging-sw.js')) {
+                  await reg.update();
+                }
+              }
+            }
             const permission = await Notification.requestPermission();
             if (permission === "granted") {
               console.log("Notification permission granted.");
@@ -89,28 +97,32 @@ function AppRouter() {
       const unsubscribe = onMessage(messaging, (payload) => {
         console.log("Message received. ", payload);
         const notificationTitle =
-          payload.notification?.title || "Update from Anjan Store";
+          payload.notification?.title || payload.data?.title || "Update from Anjan Store";
         const notificationOptions = {
-          body: payload.notification?.body || "You have a new message.",
+          body: payload.notification?.body || payload.data?.message || payload.data?.body || "You have a new message.",
           icon: "/AppIcon-512x512.png",
           data: payload.data,
         };
 
         // If the app is in the foreground, we can display a browser notification
         if (Notification.permission === "granted") {
-          const notification = new Notification(
-            notificationTitle,
-            notificationOptions,
-          );
-          notification.onclick = (event) => {
-            event.preventDefault();
-            if (
-              payload.data?.click_action === "OPEN_ORDER" &&
-              payload.data?.orderId
-            ) {
-              window.location.href = `/track_order/${payload.data.orderId}`;
+          try {
+            if (navigator.serviceWorker) {
+              navigator.serviceWorker.ready.then((registration) => {
+                registration.showNotification(notificationTitle, notificationOptions);
+              });
+            } else {
+              const notification = new Notification(notificationTitle, notificationOptions);
+              notification.onclick = (event) => {
+                event.preventDefault();
+                if (payload.data?.click_action === "OPEN_ORDER" && payload.data?.orderId) {
+                  window.location.href = `/track_order/${payload.data.orderId}`;
+                }
+              };
             }
-          };
+          } catch (e) {
+            console.error("Error showing notification:", e);
+          }
         }
 
         let targetUrl = "";

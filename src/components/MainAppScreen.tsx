@@ -119,9 +119,9 @@ export default function MainAppScreen() {
     const all = [...notifications1, ...notifications2, ...notifications3];
     const uniqueMap = new window.Map();
     all.forEach(n => {
-      if (!uniqueMap.has(n.id)) uniqueMap.set(n.id, n);
+      if (!uniqueMap.has(n.message)) uniqueMap.set(n.message, n);
     });
-    return Array.from(uniqueMap.values()).sort(
+    return Array.from(uniqueMap.values()).filter((n: any) => n.timestamp && !isNaN(new Date(n.timestamp).getTime()) && n.title !== "j" && n.title !== "Hello....." && n.message !== "j" && n.message !== "Hello.....").sort(
       (a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0)
     );
   }, [notifications1, notifications2, notifications3]);
@@ -331,7 +331,7 @@ export default function MainAppScreen() {
 
                 if (alertMsg) {
                     const notifText = alertPin ? `${alertMsg} \nPIN: ${alertPin}` : alertMsg;
-                    const notifRef = doc(collection(db, "users", user.uid, "notifications"));
+                    const notifRef = doc(collection(db, "notifications"));
                     const notifData = {
                       id: notifRef.id,
                       title: "Order Update",
@@ -342,9 +342,9 @@ export default function MainAppScreen() {
                       userId: user.uid,
                       customerId: user.uid
                     };
+                    const notifRefUser = doc(db, "users", user.uid, "notifications", notifRef.id);
                     setDoc(notifRef, notifData).catch(console.error);
-                    const notifRef2 = doc(collection(db, "notifications"));
-                    setDoc(notifRef2, notifData).catch(console.error);
+                    setDoc(notifRefUser, notifData).catch(console.error);
                 }
               }
             }
@@ -354,10 +354,19 @@ export default function MainAppScreen() {
 
     const mapNotification = (d: any) => {
       const data = d.data();
+      
+      let ts = data.timestamp || data.createdAt;
+      if (ts && typeof ts.toMillis === "function") {
+          ts = ts.toMillis();
+      } else if (ts && ts.seconds) {
+          ts = ts.seconds * 1000;
+      }
+      
       return {
         id: d.id,
         _path: d.ref.path,
         ...data,
+        timestamp: ts,
         title: data.title || data.type || "Notification",
         message: data.message || data.body || data.text || data.content || ""
       };
@@ -2353,9 +2362,11 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
               <p className="text-xs text-gray-600 leading-relaxed mb-2">
                 {notif.message}
               </p>
-              <span className="text-[10px] text-gray-400">
-                {new Date(notif.timestamp).toLocaleString()}
-              </span>
+              {notif.timestamp ? (
+                <span className="text-[10px] text-gray-400">
+                  {new Date(notif.timestamp).toLocaleString()}
+                </span>
+              ) : null}
             </div>
           ))}
         </div>

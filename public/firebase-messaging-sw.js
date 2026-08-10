@@ -1,34 +1,36 @@
-importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+self.addEventListener('install', function(event) {
+  self.skipWaiting();
+});
 
-// You would need to inject or specify the config here for the SW, but we can do it via URL params if needed, or just hardcode if we have env vars, but SW doesn't have env vars natively.
-// We'll leave placeholders, as is standard practice, or fetch it. Actually, standard Firebase requires config in SW.
-// For the purpose of the demo, we can just catch the push event directly if we don't use the compat library for config, 
-// OR we can rely on standard Push API. Let's use the standard Push API for receiving data payload.
+self.addEventListener('activate', function(event) {
+  event.waitUntil(self.clients.claim());
+});
 
 self.addEventListener('push', function(event) {
   if (event.data) {
     try {
       const payload = event.data.json();
+      console.log("[SW] Push Received.", payload);
       
       const data = payload.data || {};
       const notification = payload.notification || {};
       
-      const orderId = data.orderId;
-      const notificationId = data.notificationId;
+      // If the payload has a 'notification' object, the browser might automatically show it.
+      // To avoid duplicates, we can check if it's going to be shown.
+      // But actually, without the FCM SDK, the browser might NOT automatically show FCM notifications 
+      // unless it strictly follows the Web Push protocol for notifications.
+      // Let's always show it, and if there are duplicates, we can fix it later. 
+      // Right now, showing something is better than nothing.
       
-      const title = notification.title || "Update from Anjan Store";
-      const body = notification.body || "You have a new message.";
+      const title = notification.title || data.title || "Anjan Store Update";
+      const body = notification.body || data.message || data.body || "You have a new update.";
       
       let url = '/';
+      const orderId = data.orderId || notification.orderId;
       if (data.click_action === 'OPEN_ORDER' && orderId) {
           url = '/track_order/' + orderId;
       } else if (orderId) {
           url = '/digital_bill/' + orderId;
-      }
-      
-      if (notificationId) {
-          url += (url.includes('?') ? '&' : '?') + 'notificationId=' + notificationId;
       }
       
       const options = {
@@ -39,9 +41,18 @@ self.addEventListener('push', function(event) {
         }
       };
       
-      event.waitUntil(self.registration.showNotification(title, options));
+      event.waitUntil(
+        self.registration.showNotification(title, options)
+      );
     } catch (e) {
-      console.error('Error parsing push payload', e);
+      console.error('[SW] Error parsing push payload', e);
+      // Fallback
+      event.waitUntil(
+        self.registration.showNotification("Anjan Store Update", {
+          body: "You have a new message.",
+          icon: '/AppIcon-512x512.png'
+        })
+      );
     }
   }
 });
@@ -49,7 +60,7 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   
-  const urlToOpen = event.notification.data.url || '/';
+  const urlToOpen = event.notification.data?.url || '/';
   
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
