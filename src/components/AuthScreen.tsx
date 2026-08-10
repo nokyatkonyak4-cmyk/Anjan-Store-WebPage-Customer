@@ -119,7 +119,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
 
   if (isResetPassword) {
     return (
-      <div className="flex flex-col min-h-[100dvh] w-full bg-brand-yellow items-center justify-center p-6">
+      <div className="flex flex-col min-h-[100dvh] w-full bg-brand-yellow items-center justify-center p-6 transition-all active:scale-95 hover:opacity-90">
         <div className="w-full max-w-md bg-white/20 md:bg-white md:shadow-xl md:rounded-2xl p-0 md:p-8 rounded-none border-none">
           <div className="flex justify-center mb-6 flex">
             <img src="/AppIcon-512x512.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
@@ -138,7 +138,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
                   setIsResetPassword(false);
                   setResetSent(false);
                 }}
-                className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl flex justify-center items-center transition-transform active:scale-[0.98] shadow-md"
+                className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl flex justify-center items-center transition-all-transform active:scale-[0.98] shadow-md active:scale-95 hover:opacity-90"
               >
                 Return to Login
               </button>
@@ -165,7 +165,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
                 <button 
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl mt-6 flex justify-center items-center transition-transform active:scale-[0.98] shadow-md"
+                  className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl mt-6 flex justify-center items-center transition-all-transform active:scale-[0.98] shadow-md active:scale-95 hover:opacity-90"
                 >
                   {loading ? <Loader2 size={24} className="animate-spin" /> : 'Send Reset Link'}
                 </button>
@@ -185,7 +185,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
   }
 
   return (
-    <div className="flex flex-col min-h-[100dvh] w-full bg-brand-yellow items-center justify-center p-6">
+    <div className="flex flex-col min-h-[100dvh] w-full bg-brand-yellow items-center justify-center p-6 transition-all active:scale-95 hover:opacity-90">
       <div className="w-full max-w-md bg-white/20 md:bg-white md:shadow-xl md:rounded-2xl p-0 md:p-8 rounded-none border-none">
         <div className="flex justify-center mb-6 flex">
           <img src="/AppIcon-512x512.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
@@ -244,7 +244,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
             whileTap={{ scale: 0.95 }}
             type="submit"
             disabled={loading}
-            className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl mt-6 flex justify-center items-center shadow-md"
+            className="w-full bg-dark-bg hover:bg-black text-white font-bold py-3.5 rounded-xl mt-6 flex justify-center items-center shadow-md transition-all active:scale-95 hover:opacity-90"
           >
             {loading ? <Loader2 size={24} className="animate-spin" /> : (isSignUp ? 'Sign Up' : 'Login')}
           </motion.button>

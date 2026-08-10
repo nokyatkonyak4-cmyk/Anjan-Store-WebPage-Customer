@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { motion } from "motion/react";
 import {
   Home,
@@ -34,6 +35,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AuthScreen from "./AuthScreen";
+import { HomeScreen, CartScreen, CategoriesScreen, FavoritesScreen, ProductDetailsScreen, CategoryScreen } from "./Screens";
 import { auth, db, storage, isFirebaseConfigured } from "../firebase";
 import { onAuthStateChanged, signOut, updateProfile } from "firebase/auth";
 import {
@@ -497,16 +499,17 @@ export default function MainAppScreen() {
               <button
                 key={`desktop-nav-${index}`}
                 onClick={() => handleNavigate(item.title)}
-                className={`flex items-center w-full px-4 py-3 rounded-xl transition-all ${isSelected ? "bg-white text-dark-bg font-bold shadow-sm" : "text-dark-bg/80 hover:bg-white/50 hover:text-dark-bg font-medium"}`}
+                className={`flex items-center w-full px-4 py-3 rounded-xl transition-all active:scale-95 hover:scale-[1.02] ${
+                  isSelected
+                    ? "bg-white text-dark-bg font-bold shadow-sm"
+                    : "text-dark-bg/80 hover:bg-white/50 hover:text-dark-bg font-medium"
+                }`}
               >
                 <div className="relative mr-3">
-                  <item.icon
-                    size={20}
-                    className={isSelected ? "text-dark-bg" : "text-dark-bg/80"}
-                  />
+                  <item.icon size={20} className={isSelected ? "text-dark-bg" : "text-dark-bg/80"} />
                   {item.title === "Cart" && cartItems.length > 0 && (
                     <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
-                      {cartItems.reduce((acc, item) => acc + item.quantity, 0)}
+                      {cartItems.reduce((acc, curr) => acc + curr.quantity, 0)}
                     </span>
                   )}
                 </div>
@@ -518,68 +521,40 @@ export default function MainAppScreen() {
       </div>
 
       <div className="flex flex-col flex-1 relative min-w-0">
-        {/* Top App Bar (Mobile & Desktop) */}
         <div className="bg-brand-yellow text-dark-bg flex flex-col sticky top-0 z-20 shadow-md md:shadow-sm md:border-b md:border-brand-yellow/20">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-3 md:hidden">
               <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden">
-                <img
-                  src="/AppIcon-512x512.png"
-                  alt="Logo"
-                  className="w-full h-full object-contain"
-                />
+                <img src="/AppIcon-512x512.png" alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-lg leading-tight">
-                  Anjan Store
-                </span>
-                <span className="text-[9px] tracking-widest font-semibold uppercase">
-                  All in one place
-                </span>
+                <span className="font-bold text-lg leading-tight">Anjan Store</span>
+                <span className="text-[9px] tracking-widest font-semibold uppercase">All in one place</span>
               </div>
             </div>
-            {/* Desktop header title */}
+            
             <div className="hidden md:flex items-center">
               <h1 className="text-xl font-bold text-dark-bg">
-                {selectedItem.startsWith("Product_")
-                  ? "Product Details"
-                  : selectedItem.startsWith("Category_")
-                    ? "Category"
-                    : selectedItem}
+                {selectedItem.startsWith("Product_") ? "Product Details" : selectedItem.startsWith("Category_") ? "Category" : selectedItem}
               </h1>
             </div>
 
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="md:hover:bg-white/50 md:p-2 md:rounded-full transition"
-              >
-                {isDarkMode ? (
-                  <Sun size={24} className="text-dark-bg" />
-                ) : (
-                  <Moon size={24} className="text-dark-bg" />
-                )}
-              </button>
-              <button
                 onClick={() => handleNavigate("Favorites")}
-                className="md:hover:bg-white/50 md:p-2 md:rounded-full transition"
+                className="md:hover:bg-white/50 md:p-2 md:rounded-full transition-all active:scale-90 hover:scale-110"
               >
                 <Heart size={24} className="text-dark-bg" />
               </button>
               <button
                 onClick={() => handleNavigate("Notifications")}
-                className="relative md:hover:bg-white/50 md:p-2 md:rounded-full transition"
+                className="relative md:hover:bg-white/50 md:p-2 md:rounded-full transition-all active:scale-90 hover:scale-110"
               >
                 <Bell size={24} className="text-dark-bg" />
-                {notifications.filter((n) => !n.isRead).length > 0 && (
-                  <span className="absolute md:top-1 md:right-1 -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-brand-yellow text-[8px] text-white flex items-center justify-center">
-                    {notifications.filter((n) => !n.isRead).length}
-                  </span>
-                )}
               </button>
               <button
                 onClick={() => handleNavigate("Profile")}
-                className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-dark-bg text-[#FFC107] flex items-center justify-center font-bold text-sm md:text-base cursor-pointer shadow-sm hover:opacity-90 transition"
+                className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-dark-bg text-[#FFC107] flex items-center justify-center font-bold text-sm md:text-base cursor-pointer shadow-sm transition-all hover:scale-105 active:scale-95"
               >
                 {user?.email?.charAt(0).toUpperCase() || "U"}
               </button>
@@ -587,1739 +562,101 @@ export default function MainAppScreen() {
           </div>
         </div>
 
-        {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto pb-6 scrollbar-hide md:px-4 lg:px-8">
           <div className="w-full max-w-7xl mx-auto">
-            {selectedItem === "Home" && (
-              <HomeScreen
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                onNavigate={handleNavigate}
-                products={products}
-                categories={categories}
-                banners={banners}
-                favorites={favorites}
-                cartItems={cartItems}
-                toggleFavorite={toggleFavorite}
-                incrementCart={incrementCart}
-                decrementCart={decrementCart}
-                storeSettings={storeSettings}
-              />
-            )}
-            {selectedItem.startsWith("Product_") && (
-              <ProductDetailScreen user={user}
-                productId={selectedItem.replace("Product_", "")}
-                products={products}
-                onNavigate={handleNavigate}
-                favorites={favorites}
-                cartItems={cartItems}
-                toggleFavorite={toggleFavorite}
-                incrementCart={incrementCart}
-                decrementCart={decrementCart}
-              />
-            )}
-            {selectedItem === "Categories" && (
-              <CategoriesScreen
-                categories={categories}
-                onNavigate={handleNavigate}
-              />
-            )}
-            {selectedItem.startsWith("Category_") && (
-              <CategoryDetailScreen
-                categoryId={selectedItem.replace("Category_", "")}
-                categories={categories}
-                products={products}
-                onNavigate={handleNavigate}
-                favorites={favorites}
-                cartItems={cartItems}
-                toggleFavorite={toggleFavorite}
-                incrementCart={incrementCart}
-                decrementCart={decrementCart}
-              />
-            )}
-            {selectedItem === "Cart" && (
-              <CartScreen
-                cartItems={cartItems}
-                setCartItems={setCartItems}
-                savedAddress={savedAddress}
-                savedPhone={savedPhone}
-                incrementCart={incrementCart}
-                decrementCart={decrementCart}
-                onNavigate={handleNavigate}
-                storeSettings={storeSettings}
-              />
-            )}
-            {selectedItem === "Orders" && <OrdersScreen orders={orders} />}
-            {selectedItem === "Favorites" && (
-              <FavoritesScreen
-                products={products}
-                onNavigate={handleNavigate}
-                favorites={favorites}
-                cartItems={cartItems}
-                toggleFavorite={toggleFavorite}
-                incrementCart={incrementCart}
-                decrementCart={decrementCart}
-              />
-            )}
-            {selectedItem === "Notifications" && (
-              <NotificationsScreen
-                notifications={notifications}
-                onNavigate={handleNavigate}
-              />
-            )}
-            {selectedItem === "Profile" && (
-              <ProfileScreen
-                savedAddress={savedAddress}
-                savedPhone={savedPhone}
-                profileImage={profileImage}
-                onNavigate={handleNavigate}
-              />
-            )}
-            {selectedItem === "OrderHistory" && (
-              <OrderHistoryScreen
-                orders={orders}
-                onNavigate={handleNavigate}
-                onLeaveFeedback={(order: any) => {
-                  setFeedbackOrder(order);
-                  setFeedbackRating(5);
-                  setFeedbackText("");
-                  setFeedbackSubmitted(false);
-                }}
-              />
-            )}
+             {selectedItem === 'Home' && <HomeScreen searchQuery={searchQuery} setSearchQuery={setSearchQuery} onNavigate={handleNavigate} products={products} categories={categories} banners={banners} favorites={favorites} cartItems={cartItems} incrementCart={incrementCart} decrementCart={decrementCart} storeSettings={storeSettings} />}
+             {selectedItem === 'Cart' && <CartScreen cartItems={cartItems} setCartItems={setCartItems} incrementCart={incrementCart} decrementCart={decrementCart} onNavigate={handleNavigate} storeSettings={storeSettings} />}
+             {selectedItem === 'Categories' && <CategoriesScreen categories={categories} onNavigate={handleNavigate} />}
+             {selectedItem === 'Favorites' && <FavoritesScreen favorites={favorites} products={products} onNavigate={handleNavigate} />}
+             {selectedItem.startsWith('Product_') && <ProductDetailsScreen productId={selectedItem.replace('Product_', '')} products={products} onNavigate={handleNavigate} incrementCart={incrementCart} />}
+             {selectedItem.startsWith('Category_') && <CategoryScreen categoryId={selectedItem.replace('Category_', '')} products={products} categories={categories} onNavigate={handleNavigate} incrementCart={incrementCart} />}
+             {selectedItem === 'Profile' && <ProfileScreen savedAddress={savedAddress} savedPhone={savedPhone} profileImage={profileImage} onNavigate={handleNavigate} />}
+             {selectedItem === 'Notifications' && <NotificationsScreen notifications={notifications} onNavigate={handleNavigate} />}
           </div>
         </div>
 
-        {/* Bottom Navigation (Mobile Only) */}
-        <div className="md:hidden bg-white border-t border-gray-100 flex justify-around items-center h-[60px] w-full z-20 px-4 shrink-0">
+        <div className="md:hidden bg-white border-t border-gray-100 flex items-center justify-around py-3 px-2 z-20 pb-safe">
           {bottomNavItems.map((item, index) => {
-            const isSelected =
-              selectedItem === item.title ||
-              (item.title === "Categories" &&
-                selectedItem.startsWith("Category_"));
+            const isSelected = selectedItem === item.title || (item.title === "Categories" && selectedItem.startsWith("Category_"));
             return (
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                key={`${item.title}-${index}`}
+              <button
+                key={`mobile-nav-${index}`}
                 onClick={() => handleNavigate(item.title)}
-                className={`flex items-center justify-center transition-all duration-300 h-[40px] ${isSelected ? "bg-dark-bg text-brand-yellow px-4 rounded-full space-x-2" : "flex-col space-y-1 w-[60px] text-gray-400"}`}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all active:scale-95 hover:scale-[1.05] ${isSelected ? "text-dark-bg" : "text-gray-400"}`}
               >
-                <div className="relative flex items-center justify-center">
-                  <item.icon
-                    size={20}
-                    className={
-                      isSelected
-                        ? "text-brand-yellow fill-brand-yellow"
-                        : "text-gray-400"
-                    }
-                  />
-                  {item.title === "Cart" && cartItems.length > 0 && (
-                    <span className="absolute -top-1 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
-                      {cartItems.reduce((acc, item) => acc + item.quantity, 0)}
-                    </span>
-                  )}
-                </div>
-                {isSelected ? (
-                  <span className="text-[12px] font-bold">{item.title}</span>
-                ) : (
-                  <span className="text-[10px] font-medium">{item.title}</span>
-                )}
-              </motion.button>
+                <item.icon size={24} className={isSelected ? "text-dark-bg" : "text-gray-400"} />
+                <span className="text-[10px] font-semibold">{item.title}</span>
+              </button>
             );
           })}
         </div>
       </div>
-
-      {/* Feedback Modal */}
-      {feedbackOrder && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setFeedbackOrder(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-            >
-              <Plus size={24} className="rotate-45" />
-            </button>
-
-            {feedbackSubmitted ? (
-              <div className="flex flex-col items-center justify-center py-6">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle size={32} className="text-green-500" />
-                </div>
-                <h3 className="text-xl font-bold text-dark-bg mb-2">
-                  Thank You!
-                </h3>
-                <p className="text-gray-500 text-center text-sm">
-                  Your feedback has been submitted successfully.
-                </p>
-              </div>
-            ) : (
-              <>
-                <h3 className="text-xl font-bold text-dark-bg mb-4">
-                  Leave Feedback
-                </h3>
-                <p className="text-xs text-gray-500 mb-6">
-                  Rate your experience for Order #{feedbackOrder.id.slice(0, 8)}
-                </p>
-
-                <div className="flex justify-center space-x-2 mb-6">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => setFeedbackRating(star)}
-                      className="focus:outline-none transition-transform hover:scale-110"
-                    >
-                      <Star
-                        size={32}
-                        className={
-                          star <= feedbackRating
-                            ? "text-brand-yellow fill-brand-yellow"
-                            : "text-gray-200"
-                        }
-                      />
-                    </button>
-                  ))}
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-xs font-bold text-gray-700 mb-2">
-                    Comments (Optional)
-                  </label>
-                  <textarea
-                    value={feedbackText}
-                    onChange={(e) => setFeedbackText(e.target.value)}
-                    placeholder="Tell us what you liked or how we can improve..."
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow min-h-[100px] resize-none"
-                  ></textarea>
-                </div>
-
-                <button
-                  onClick={submitFeedback}
-                  disabled={isSubmittingFeedback}
-                  className="w-full bg-brand-yellow text-dark-bg font-bold py-3 rounded-full shadow-lg text-sm disabled:opacity-50"
-                >
-                  {isSubmittingFeedback ? "Submitting..." : "Submit Feedback"}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// --- Screens ---
-
-function HomeScreen({
-  searchQuery,
-  setSearchQuery,
-  onNavigate,
-  products,
-  categories,
-  banners,
-  favorites,
-  cartItems,
-  toggleFavorite,
-  incrementCart,
-  decrementCart,
-  user,
-  storeSettings,
-}: any) {
-  const navigate = useNavigate();
-  const [selectedOffer, setSelectedOffer] = useState<CampaignSlide | null>(
-    null,
-  );
-
-  const offerProducts = React.useMemo(() => {
-    if (!selectedOffer) return [];
-
-    switch (selectedOffer.id) {
-      case "dyn_rated":
-        return [...products]
-          .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
-          .slice(0, 10);
-      case "dyn_saled":
-        return [...products]
-          .sort((a: any, b: any) => (b.reviewCount || 0) - (a.reviewCount || 0))
-          .slice(0, 10);
-      case "dyn_discount":
-        return products.filter((p: any) => p.price < 50);
-      case "dyn_trend":
-        return [...products].sort(() => 0.5 - Math.random()).slice(0, 10);
-      default:
-        if (selectedOffer.link) {
-          return products.filter(
-            (p: any) =>
-              p.category?.toLowerCase() === selectedOffer.link?.toLowerCase(),
-          );
-        }
-        return [...products].sort(() => 0.5 - Math.random()).slice(0, 10);
-    }
-  }, [selectedOffer, products]);
-
-  let displayedProducts = searchQuery
-    ? products.filter(
-        (p: any) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.category.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : [...products];
-
-  if (!searchQuery) {
-    // Render all displayed products as is
-  }
-
-  if (selectedOffer) {
-    return (
-      <div className="flex flex-col w-full pb-4 animate-in fade-in pt-4">
-        {/* Header & Back Button */}
-        <div className="flex items-center px-4 mb-6">
-          <button
-            onClick={() => setSelectedOffer(null)}
-            className="mr-4 p-2 bg-white shadow-sm rounded-full hover:bg-gray-100 transition"
-          >
-            <ArrowLeft size={20} className="text-dark-bg" />
-          </button>
-          <h1 className="text-xl font-bold text-dark-bg">
-            {selectedOffer.title || "Special Offers"}
-          </h1>
-        </div>
-
-        {/* Product Grid */}
-        {offerProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center mt-20">
-            <p className="text-gray-500 text-lg">
-              No products found for this offer.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5 px-4 pb-6">
-            {offerProducts.map((product: any, index: number) => (
-              <ProductCard
-                onProductClick={(p: any) => onNavigate(`Product_${p.id}`)}
-                key={`${product.id}-${index}`}
-                product={product}
-                cartQuantity={
-                  cartItems.find((i: any) => i.product.id === product.id)
-                    ?.quantity || 0
-                }
-                isFavorite={favorites.includes(product.id)}
-                onToggleFavorite={() => toggleFavorite(product.id)}
-                onIncrement={() => incrementCart(product)}
-                onDecrement={() => decrementCart(product)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col w-full pb-4">
-      <div className="sticky top-0 z-20 bg-light-bg pt-4 pb-2 mb-2 px-4 md:px-0">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search for groceries, items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white rounded-xl py-3.5 pl-12 pr-4 text-sm shadow-[0_2px_10px_rgba(0,0,0,0.05)] outline-none border border-gray-100"
-          />
-          <Search size={18} className="absolute left-4 top-4 text-gray-500" />
-        </div>
-      </div>
-
-      {!searchQuery && banners && banners.length > 0 && (
-        <div className="mb-4">
-          <BannerSlider
-            slides={banners.map((b: any) => ({
-              id: b.id,
-              title: b.title || "",
-              imageUrl: b.imageUrl || b.image || "",
-              link: b.link || "",
-            }))}
-          />
-        </div>
-      )}
-
-      {!searchQuery && categories && categories.length > 0 && (
-        <div className="mb-8 md:mb-10 bg-transparent pt-2 pb-1">
-          <div className="flex justify-between items-center px-4 md:px-2 mb-5">
-            <h2 className="font-bold text-dark-bg text-sm md:text-xl">
-              Shop by Category
-            </h2>
-            <button
-              onClick={() => onNavigate("Categories")}
-              className="text-[#FFC107] font-bold text-xs md:text-sm hover:underline"
-            >
-              See All
-            </button>
-          </div>
-          <div className="flex overflow-x-auto px-4 md:px-2 space-x-5 md:space-x-8 scrollbar-hide pb-4">
-            {categories.map((cat: any, index: number) => (
-              <div
-                key={`${cat.id}-${index}`}
-                onClick={() => onNavigate(`Category_${cat.id}`)}
-                className="flex flex-col items-center cursor-pointer shrink-0 w-[64px] md:w-[96px] group"
-              >
-                <div className="w-full h-[50px] md:h-[80px] flex items-center justify-center mb-2 md:mb-3 bg-white shadow-sm md:shadow-sm rounded-xl p-2 group-hover:shadow-md transition-shadow">
-                  <img
-                    src={
-                      cat.imageUrl ||
-                      cat.image ||
-                      "/AppIcon-512x512.png"
-                    }
-                    alt={cat.name}
-                    className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src =
-                        "/AppIcon-512x512.png";
-                    }}
-                  />
-                </div>
-                <span className="text-[10px] md:text-sm font-bold text-dark-bg text-center leading-tight">
-                  {cat.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="px-4 md:px-2">
-        <h2 className="font-bold text-dark-bg text-lg md:text-xl mb-4 md:mb-6">
-          {searchQuery ? "Search Results" : "Explore All Products"}
-        </h2>
-        {displayedProducts.length === 0 ? (
-          <div className="flex items-center justify-center p-8 text-gray-500">
-            No products found.
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
-            {displayedProducts.map((product: any, index: number) => {
-              // Show banner after the 6th item, or after the last item if less than 6 items
-              const finalShowBanner =
-                index === 5 ||
-                (displayedProducts.length < 6 &&
-                  index === displayedProducts.length - 1);
-
-              return (
-                <React.Fragment key={`${product.id}-${index}`}>
-                  <ProductCard
-                    onProductClick={(p: any) => onNavigate(`Product_${p.id}`)}
-                    product={product}
-                    cartQuantity={
-                      cartItems.find((i: any) => i.product.id === product.id)
-                        ?.quantity || 0
-                    }
-                    isFavorite={favorites.includes(product.id)}
-                    onToggleFavorite={() => toggleFavorite(product.id)}
-                    onIncrement={() => incrementCart(product)}
-                    onDecrement={() => decrementCart(product)}
-                  />
-
-                  {finalShowBanner &&
-                    !searchQuery &&
-                    products &&
-                    products.length > 0 && (
-                      <div className="col-span-full my-2 -mx-4 px-4 md:mx-0 md:px-0">
-                        {(() => {
-                          const topDeal =
-                            products.find((p: any) => p.price < 50) ||
-                            products[0];
-                          const bestSeller =
-                            products.length > 0
-                              ? [...products].sort(
-                                  (a: any, b: any) =>
-                                    (b.reviewCount || 0) - (a.reviewCount || 0),
-                                )[0]
-                              : null;
-
-                          const generatedSlides = [];
-                          if (topDeal) {
-                            generatedSlides.push({
-                              id: "top-deal-" + topDeal.id,
-                              title: topDeal.name,
-                              subtitle: `Only ₹${topDeal.price}`,
-                              imageUrl:
-                                topDeal.imageUrl ||
-                                topDeal.image ||
-                                topDeal.photoUrl ||
-                                "",
-                              badgeText: "HOT DEAL",
-                              badgeColor: "#F44336",
-                              link: "",
-                            });
-                          }
-                          // Only add bestSeller if it's a different product, or if we want multiple we can just add it
-                          if (bestSeller && bestSeller.id !== topDeal?.id) {
-                            generatedSlides.push({
-                              id: "best-seller-" + bestSeller.id,
-                              title: bestSeller.name,
-                              subtitle: "Highly Rated",
-                              imageUrl:
-                                bestSeller.imageUrl ||
-                                bestSeller.image ||
-                                bestSeller.photoUrl ||
-                                "",
-                              badgeText: "BEST SELLER",
-                              badgeColor: "#4CAF50",
-                              link: "",
-                            });
-                          }
-
-                          // Ensure we have at least something if they are the same
-                          if (
-                            generatedSlides.length === 1 &&
-                            products.length > 1
-                          ) {
-                            const another = products.find(
-                              (p: any) =>
-                                p.id !==
-                                generatedSlides[0].id
-                                  .replace("top-deal-", "")
-                                  .replace("best-seller-", ""),
-                            );
-                            if (another) {
-                              generatedSlides.push({
-                                id: "featured-" + another.id,
-                                title: another.name,
-                                subtitle: another.category
-                                  ? `Featured ${another.category}`
-                                  : "Featured Product",
-                                imageUrl:
-                                  another.imageUrl ||
-                                  another.image ||
-                                  another.photoUrl ||
-                                  "",
-                                badgeText: "FEATURED",
-                                badgeColor: "#FFC107",
-                                link: "",
-                              });
-                            }
-                          }
-
-                          return generatedSlides.length > 0 ? (
-                            <SecondaryBannerSlider
-                              slides={generatedSlides}
-                              onSlideClick={(slide) => {
-                                const pid = slide.id
-                                  .replace("top-deal-", "")
-                                  .replace("best-seller-", "")
-                                  .replace("featured-", "");
-                                if (
-                                  pid &&
-                                  products.find((p: any) => p.id === pid)
-                                ) {
-                                  onNavigate(`Product_${pid}`);
-                                } else {
-                                  setSelectedOffer(slide);
-                                }
-                              }}
-                            />
-                          ) : null;
-                        })()}
-                      </div>
-                    )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        )}
-      </div>
-      {/* Anjan Store Information */}
-      <div className="px-4 mt-12 mb-8">
-        <h2 className="font-bold text-dark-bg text-[15px] mb-4">
-          Anjan Store Information
-        </h2>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-50 overflow-hidden">
-          {[
-            { text: "About Us", path: "about-us" },
-            { text: "FAQ", path: "faq" },
-            {
-              text: "Customer Support",
-              path: "/customer-support",
-              isAbsolute: true,
-            },
-            {
-              text: "Shipping & Delivery Policy",
-              path: "shipping-delivery-policy",
-            },
-            { text: "Terms & Conditions", path: "terms-conditions" },
-            { text: "Privacy Policy", path: "privacy-policy" },
-          ].map((item, idx) => (
-            <div
-              key={`${item.text}-${idx}`}
-              onClick={() =>
-                navigate(
-                  item.isAbsolute ? item.path : `/static_page/${item.path}`,
-                )
-              }
-              className={`flex justify-between items-center px-5 py-4 cursor-pointer ${idx !== 5 ? "border-b border-gray-50" : ""}`}
-            >
-              <span className="font-bold text-sm text-dark-bg">
-                {item.text}
-              </span>
-              <ChevronRight size={16} className="text-gray-400" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Contact Us / Customer Helpdesk */}
-      {storeSettings &&
-        (storeSettings.supportEmail || storeSettings.supportPhone) && (
-          <div className="px-4 mb-10">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-50 p-6 flex flex-col items-center">
-              <h2 className="font-bold text-dark-bg text-lg mb-2">
-                We're here to help!
-              </h2>
-              <p className="text-gray-500 text-sm text-center mb-6">
-                If you have any issues with your order or need assistance,
-                please contact us.
-              </p>
-
-              <div className="w-full flex flex-col space-y-3 max-w-sm">
-                {(storeSettings.supportWhatsapp ||
-                  storeSettings.supportPhone) && (
-                  <a
-                    href={`https://wa.me/${(storeSettings.supportWhatsapp || storeSettings.supportPhone).match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, "") || (storeSettings.supportWhatsapp || storeSettings.supportPhone).replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-3 bg-[#4ade80] hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity"
-                  >
-                    <Phone size={18} />
-                    <span>Chat on WhatsApp</span>
-                  </a>
-                )}
-                {storeSettings.supportPhone && (
-                  <a
-                    href={`tel:${storeSettings.supportPhone.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, "") || storeSettings.supportPhone.replace(/\D/g, "")}`}
-                    className="w-full py-3 bg-blue-600 hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity"
-                  >
-                    <Phone size={18} />
-                    <span>Call Us</span>
-                  </a>
-                )}
-                {storeSettings.supportEmail && (
-                  <a
-                    href={`mailto:${storeSettings.supportEmail.trim()}`}
-                    className="w-full py-3 bg-[#0f172a] hover:bg-opacity-90 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-opacity"
-                  >
-                    <Mail size={18} />
-                    <span>Email Support</span>
-                  </a>
-                )}
-              </div>
-
-              <div className="mt-6 flex flex-col space-y-2 text-center items-center justify-center">
-                {storeSettings.supportWhatsapp && (
-                  <div className="flex items-center justify-center text-sm text-gray-500 font-medium">
-                    <Phone size={16} className="mr-2" />
-                    <span>WhatsApp:&nbsp;</span>
-                    <a
-                      href={`https://wa.me/${storeSettings.supportWhatsapp.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, "") || storeSettings.supportWhatsapp.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-dark-bg transition-colors font-semibold"
-                    >
-                      {storeSettings.supportWhatsapp}
-                    </a>
-                  </div>
-                )}
-                {storeSettings.supportPhone &&
-                  storeSettings.supportPhone !==
-                    storeSettings.supportWhatsapp && (
-                    <div className="flex items-center justify-center text-sm text-gray-500 font-medium">
-                      <Phone size={16} className="mr-2" />
-                      <span>Phone:&nbsp;</span>
-                      <a
-                        href={`tel:${storeSettings.supportPhone.match(/\+?[\d\s-]{8,}/)?.[0]?.replace(/\D/g, "") || storeSettings.supportPhone.replace(/\D/g, "")}`}
-                        className="hover:text-dark-bg transition-colors font-semibold"
-                      >
-                        {storeSettings.supportPhone}
-                      </a>
-                    </div>
-                  )}
-                {storeSettings.supportEmail && (
-                  <div className="flex items-center justify-center text-sm text-gray-500 font-medium">
-                    <Mail size={16} className="mr-2" />
-                    <span>Email:&nbsp;</span>
-                    <a
-                      href={`mailto:${storeSettings.supportEmail.trim()}`}
-                      className="hover:text-dark-bg transition-colors font-semibold"
-                    >
-                      {storeSettings.supportEmail}
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-      {/* Watermark */}
-      <div className="flex flex-col items-center justify-center pt-10 pb-32 select-none">
-        <span className="text-3xl font-black tracking-[0.2em] uppercase mb-2 text-gray-300">
-          Anjan Store
-        </span>
-        <span className="text-[10px] font-bold tracking-[0.3em] uppercase mb-4 text-gray-300">
-          All in one place
-        </span>
-        <span className="text-base md:text-lg font-bold text-gray-300 mb-8">
-          Making your everyday life easier
-        </span>
-        <span className="text-[10px] text-gray-400 font-medium">
-          crafted by: Nokyat Konyak (NiniBuild)
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function CategoriesScreen({ categories, onNavigate }: any) {
-  const [search, setSearch] = useState("");
-  const filtered = categories.filter((c: any) =>
-    c.name.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  return (
-    <div className="flex flex-col w-full pb-4">
-      <div className="sticky top-0 z-20 bg-light-bg pt-4 pb-4 px-4 mb-4 md:px-0 -mx-4 md:mx-0">
-        <div className="relative px-4 md:px-0">
-          <input
-            type="text"
-            placeholder="Search categories..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white rounded-xl py-3.5 pl-12 pr-4 text-sm shadow-[0_2px_10px_rgba(0,0,0,0.05)] outline-none border border-gray-100 focus:border-[#FFC107]"
-          />
-          <Search
-            size={18}
-            className="absolute left-8 md:left-4 top-4 text-gray-400"
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5 px-4 md:px-0">
-        {filtered.map((cat: any, index: number) => (
-          <div
-            key={`${cat.id}-${index}`}
-            onClick={() => onNavigate(`Category_${cat.id}`)}
-            className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-shadow cursor-pointer border border-gray-100 aspect-square group"
-          >
-            <div className="w-full h-full max-h-[70px] md:max-h-[110px] flex items-center justify-center mb-3">
-              <img
-                src={
-                  cat.imageUrl ||
-                  cat.image ||
-                  "/AppIcon-512x512.png"
-                }
-                alt={cat.name}
-                className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src =
-                    "/AppIcon-512x512.png";
-                }}
-              />
-            </div>
-            <span className="text-[11px] md:text-sm font-bold text-dark-bg text-center line-clamp-2 leading-tight">
-              {cat.name}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ProductDetailScreen({
-  productId,
-  products,
-  onNavigate,
-  cartItems,
-  favorites,
-  toggleFavorite,
-  incrementCart,
-  decrementCart,
-  user,
-}: any) {
-  const product = products.find((p: any) => p.id === productId);
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
-  
-  if (!product)
-    return (
-      <div className="p-8 text-center text-gray-500">Product not found</div>
-    );
-
-  
-  const [reviews, setReviews] = React.useState([]);
-  const [newReviewText, setNewReviewText] = React.useState("");
-  const [newReviewRating, setNewReviewRating] = React.useState(5);
-  const [isSubmittingReview, setIsSubmittingReview] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!product) return;
-    const q = query(collection(db, "products", product.id, "reviews"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(q, (snap) => {
-      setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    }, (error) => console.warn("Reviews snapshot error:", error?.message));
-    return () => unsub();
-  }, [product?.id]);
-
-  const submitReview = async () => {
-    if (!user) {
-      alert("Please login to submit a review.");
-      return;
-    }
-    if (!newReviewText.trim()) return;
-    setIsSubmittingReview(true);
-    try {
-      await addDoc(collection(db, "products", product.id, "reviews"), {
-        userId: user.uid,
-        userName: user.displayName || user.email?.split("@")[0] || "User",
-        rating: newReviewRating,
-        comment: newReviewText,
-        createdAt: serverTimestamp()
-      });
-      setNewReviewText("");
-      setNewReviewRating(5);
-    } catch (err) {
-      console.error("Error adding review:", err);
-      alert("Failed to submit review.");
-    }
-    setIsSubmittingReview(false);
-  };
-
-  const cartQuantity =
-    cartItems.find((i: any) => i.product.id === product.id)?.quantity || 0;
-  const isFavorite = favorites.includes(product.id);
-  const images =
-    product.imageUrls ||
-    product.images ||
-    (product.imageUrl || product.image
-      ? [product.imageUrl || product.image]
-      : [
-          "/AppIcon-512x512.png",
-        ]);
-
-  return (
-    <div className="flex flex-col w-full animate-in fade-in pb-6">
-      <div className="relative w-full h-[300px] md:h-[400px] bg-white">
-        <button
-          onClick={() => onNavigate("Back")}
-          className="absolute top-4 left-4 z-10 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm"
-        >
-          <ArrowLeft size={20} className="text-dark-bg" />
-        </button>
-        <button
-          onClick={() => toggleFavorite(product.id)}
-          className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm border border-gray-100"
-        >
-          <Heart
-            size={20}
-            className={
-              isFavorite ? "fill-[#FFC107] text-[#FFC107]" : "text-gray-400"
-            }
-          />
-        </button>
-        <div 
-          ref={scrollContainerRef}
-          onScroll={(e) => {
-            const scrollLeft = e.currentTarget.scrollLeft;
-            const width = e.currentTarget.clientWidth;
-            setCurrentImageIndex(Math.round(scrollLeft / width));
-          }}
-          className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth relative"
-        >
-          {images.map((img: string, idx: number) => (
-            <div
-              key={idx}
-              className="w-full h-full shrink-0 snap-center flex items-center justify-center p-2"
-            >
-              <img
-                src={img}
-                alt={`${product.name} - image ${idx + 1}`}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src =
-                    "/AppIcon-512x512.png";
-                }}
-              />
-            </div>
-          ))}
-        </div>
-        {images.length > 1 && (
-          <>
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                if (scrollContainerRef.current) {
-                  scrollContainerRef.current.scrollBy({ left: -scrollContainerRef.current.clientWidth, behavior: 'smooth' });
-                }
-              }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md z-10 hover:bg-white transition"
-            >
-              <ChevronLeft size={24} className="text-dark-bg" />
-            </button>
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                if (scrollContainerRef.current) {
-                  scrollContainerRef.current.scrollBy({ left: scrollContainerRef.current.clientWidth, behavior: 'smooth' });
-                }
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md z-10 hover:bg-white transition"
-            >
-              <ChevronRight size={24} className="text-dark-bg" />
-            </button>
-          </>
-        )}
-      </div>
-      {images.length > 1 && (
-        <div className="bg-white px-4 py-3 flex overflow-x-auto space-x-3 scrollbar-hide border-b border-gray-100">
-          {images.map((img: string, idx: number) => (
-            <button
-              key={idx}
-              onClick={() => {
-                if (scrollContainerRef.current) {
-                  scrollContainerRef.current.scrollTo({ left: idx * scrollContainerRef.current.clientWidth, behavior: 'smooth' });
-                }
-              }}
-              className={`relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${idx === currentImageIndex ? 'border-brand-yellow shadow-sm scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}
-            >
-              <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
-      )}
-      <div className={`p-5 bg-white relative z-10 flex-1 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] border-t border-gray-100 ${images.length <= 1 ? 'rounded-t-3xl -mt-6' : ''}`}>
-        <div className="flex justify-between items-start mb-2">
-          <h1 className="text-2xl font-bold text-dark-bg">{product.name}</h1>
-          <h2 className="text-xl font-bold text-dark-bg">₹{product.price}</h2>
-        </div>
-        <span className="inline-block text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md mb-4">
-          {product.category}
-        </span>
-
-        <p className="text-sm text-gray-600 leading-relaxed mb-6">
-          {product.description ||
-            "No description provided."}
-        </p>
-
-        <div className="mt-8">
-          {cartQuantity === 0 ? (
-            <button
-              onClick={() => incrementCart(product)}
-              className="w-full bg-brand-yellow text-dark-bg font-bold py-3.5 rounded-xl shadow-sm flex items-center justify-center transition-transform active:scale-95"
-            >
-              <ShoppingCart size={18} className="mr-2" />
-              Add to Cart
-            </button>
-          ) : (
-            <div className="flex items-center justify-between bg-brand-yellow/10 border border-brand-yellow/30 rounded-xl p-2">
-              <button
-                onClick={() => decrementCart(product)}
-                className="w-12 h-10 bg-white rounded-lg flex items-center justify-center font-bold text-dark-bg shadow-sm"
-              >
-                -
-              </button>
-              <span className="font-bold text-lg text-dark-bg">
-                {cartQuantity}
-              </span>
-              <button
-                onClick={() => incrementCart(product)}
-                className="w-12 h-10 bg-brand-yellow rounded-lg flex items-center justify-center font-bold text-dark-bg shadow-sm"
-              >
-                +
-              </button>
-            </div>
-          )}
-        
-        </div>
-        <div className="mt-8 border-t border-gray-100 pt-6">
-          <h3 className="text-xl font-bold text-dark-bg mb-4">Reviews</h3>
-          
-          <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-            <h4 className="font-bold text-gray-800 mb-2">Write a Review</h4>
-            <div className="flex space-x-1 mb-3">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => setNewReviewRating(star)}
-                  className="focus:outline-none"
-                >
-                  <Heart
-                    size={24}
-                    className={
-                      star <= newReviewRating
-                        ? "fill-[#FFC107] text-[#FFC107]"
-                        : "text-gray-300"
-                    }
-                  />
-                </button>
-              ))}
-            </div>
-            <textarea
-              className="w-full bg-white border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-yellow mb-3 min-h-[80px]"
-              placeholder="What do you think about this product?"
-              value={newReviewText}
-              onChange={(e) => setNewReviewText(e.target.value)}
-            />
-            <button
-              onClick={submitReview}
-              disabled={isSubmittingReview || !newReviewText.trim()}
-              className="w-full bg-dark-bg text-white font-bold py-2 rounded-lg shadow-sm disabled:opacity-50"
-            >
-              {isSubmittingReview ? "Submitting..." : "Submit Review"}
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {reviews.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-4">No reviews yet. Be the first to review!</p>
-            ) : (
-              reviews.map((review: any) => (
-                <div key={review.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-gray-800 text-sm">{review.userName}</span>
-                    <div className="flex space-x-0.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Heart
-                          key={star}
-                          size={12}
-                          className={
-                            star <= review.rating
-                              ? "fill-[#FFC107] text-[#FFC107]"
-                              : "text-gray-300"
-                          }
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">{review.comment}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-function CategoryDetailScreen({
-  categoryId,
-  categories,
-  products,
-  onNavigate,
-  favorites,
-  cartItems,
-  toggleFavorite,
-  incrementCart,
-  decrementCart,
-  user,
-}: any) {
-  const cat = categories.find((c: any) => c.id === categoryId);
-  const catProducts = products.filter(
-    (p: any) => p.category === cat?.name || p.categoryId === categoryId,
-  );
-
-  return (
-    <div className="flex flex-col w-full p-4 animate-in fade-in">
-      <div
-        className="flex items-center mb-6 cursor-pointer"
-        onClick={() => onNavigate("Back")}
-      >
-        <ArrowLeft size={24} className="text-dark-bg mr-3" />
-        <h2 className="text-xl font-bold text-dark-bg">
-          {cat?.name || "Category"}
-        </h2>
-      </div>
-      {catProducts.length === 0 ? (
-        <div className="flex items-center justify-center p-8 text-gray-500">
-          No products in this category yet.
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5 pb-6">
-          {catProducts.map((product: any, index: number) => (
-            <ProductCard
-              onProductClick={(p: any) => onNavigate(`Product_${p.id}`)}
-              key={`${product.id}-${index}`}
-              product={product}
-              cartQuantity={
-                cartItems.find((i: any) => i.product.id === product.id)
-                  ?.quantity || 0
-              }
-              isFavorite={favorites.includes(product.id)}
-              onToggleFavorite={() => toggleFavorite(product.id)}
-              onIncrement={() => incrementCart(product)}
-              onDecrement={() => decrementCart(product)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CartScreen({
-  cartItems,
-  setCartItems,
-  savedAddress,
-  savedPhone,
-  incrementCart,
-  decrementCart,
-  user,
-  onNavigate,
-  storeSettings,
-}: any) {
-  // 1. Calculate the total cost of items in the cart
-  const getOrderItemsTotal = (items: any[]) => {
-    return items.reduce((sum, item) => sum + ((item.product.price || 0) * (item.quantity || 1)), 0);
-  };
-
-  // 2. Safely retrieve dynamic fees
-  const handlingFee = Number(storeSettings?.handlingFee || 0);
-  const deliveryFee = Number(storeSettings?.deliveryFee || 0);
-
-  // 3. Accurately calculate the Grand Total Bill
-  const getGrandTotal = (items: any[]) => {
-    return getOrderItemsTotal(items) + handlingFee + deliveryFee;
-  };
-
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [deliveryType, setDeliveryType] = useState("Instant");
-
-  const handleCheckout = async () => {
-    if (!savedAddress || !savedPhone) {
-      alert(
-        "Please update your Delivery Address and Phone in the Profile tab first.",
-      );
-      onNavigate("Profile");
-      return;
-    }
-
-    if (!auth?.currentUser || !db) return;
-
-    const paymentMethod = "Cash on Delivery"; // Can be dynamic if you have a payment selector
-
-    const productsTotal = getOrderItemsTotal(cartItems);
-    const platformFee = handlingFee;
-    const finalDeliveryFee = deliveryFee;
-    const totalBill = productsTotal + finalDeliveryFee + platformFee;
-console.log("Placing order to db:", db.app.options.projectId, db.app.name, db.type);
-
-    const formattedItems = cartItems.map((item: any) => ({
-      id: String(item.product?.id || item.id),
-      name: item.product?.name || item.name || item.title || "Product",
-      quantity: Number(item.quantity) || 1,
-      price: Number(item.product?.price || item.price) || 0
-    }));
-
-    const orderPayload = {
-      status: 'Placed',
-      createdAt: serverTimestamp(),
-      createdAtMs: Date.now(), // Critical for Admin Panel real-time sorting
-      
-      // Customer Info
-      customerName: auth.currentUser.displayName || user?.name || 'Customer',
-      phone: savedPhone || '',
-      address: savedAddress || '',
-      customerEmail: auth.currentUser.email || user?.email || '',
-      userId: auth.currentUser.uid || '',
-      fcmToken: '', 
-      
-      // Order Items
-      items: formattedItems,
-      itemsCount: formattedItems.length,
-      
-      // Pricing
-      productsTotal,
-      deliveryFee: finalDeliveryFee,
-      platformFee,
-      totalBill,
-      totalPrice: totalBill, // Fallback field
-      
-      // Delivery & Payment Settings
-      deliveryType, // Will be 'Instant', '1 Day', or '1 Week'
-      paymentMethod: paymentMethod || 'Cash on Delivery',
-      paymentStatus: paymentMethod === 'Cash on Delivery' ? 'Pending' : 'Paid',
-      
-      // Default required fields for Admin dispatch routing
-      distanceStr: '',
-      deliveryTimeStr: 'N/A',
-      deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(), // 4-digit OTP for delivery boy
-      deliveryBoyId: ''
-    };
-
-    try {
-      const sanitizedPayload = JSON.parse(JSON.stringify(orderPayload, (key, value) => value === undefined ? null : value));
-      const orderRef = await addDoc(collection(db, 'orders'), sanitizedPayload);
-      
-      const notifRef = doc(collection(db, "users", auth.currentUser.uid, "notifications"));
-      const notifData = {
-        id: notifRef.id,
-        title: "Order Placed Successfully",
-        message: `Your order #${orderRef.id.substring(0, 6).toUpperCase()} has been placed successfully and is pending approval.`,
-        timestamp: Date.now(),
-        createdAt: Date.now(),
-        isRead: false,
-        userId: auth.currentUser.uid,
-        customerId: auth.currentUser.uid
-      };
-      await setDoc(notifRef, notifData);
-
-      setCartItems([]);
-      setShowConfirm(false);
-      onNavigate("Orders");
-    } catch (e: any) {
-      console.error(e);
-      alert("Failed to place order: " + (e.message || "Unknown error"));
-    }
-  };
-
-  if (cartItems.length === 0) {
-    return (
-      <div className="flex flex-col w-full h-full items-center justify-center p-4 animate-in fade-in pt-32">
-        <ShoppingCart size={64} className="text-gray-300 mb-4" />
-        <h2 className="text-xl text-gray-500 font-medium">
-          Your cart is empty
-        </h2>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col w-full p-4 min-h-full animate-in fade-in">
-      <div className="bg-[#FFF9E6] rounded-xl p-3 flex mb-4">
-        <MapPin size={20} className="text-[#FFC107] shrink-0 mr-2 mt-0.5" />
-        <div>
-          <span className="font-bold text-sm text-dark-bg block mb-1">
-            Delivering to:
-          </span>
-          <span className="text-xs text-gray-600 line-clamp-2">
-            {savedAddress ||
-              "No address provided! Please update your Profile settings."}
-          </span>
-        </div>
-      </div>
-
-      <div className="space-y-3 flex-1 pb-6">
-        {cartItems.map((item: any, index: number) => (
-          <div
-            key={`${item.product.id}-${index}`}
-            className="bg-white rounded-xl p-3 flex items-center shadow-sm border border-gray-100"
-          >
-            <img
-              src={
-                (item.product.imageUrls && item.product.imageUrls[0]) ||
-                (item.product.images && item.product.images[0]) ||
-                item.product.imageUrl ||
-                item.product.image ||
-                "/AppIcon-512x512.png"
-              }
-              alt={item.product.name}
-              className="w-16 h-16 rounded-lg object-contain bg-gray-50 mr-3 shrink-0"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src =
-                  "/AppIcon-512x512.png";
-              }}
-            />
-            <div className="flex flex-col flex-1">
-              <span className="font-bold text-sm text-dark-bg line-clamp-1 mb-1">
-                {item.product.name}
-              </span>
-              <span className="text-xs text-gray-500 font-medium">
-                ₹{item.product.price}
-              </span>
-            </div>
-            <div className="flex items-center bg-gray-50 rounded-lg h-8 px-1 ml-2 border border-gray-100 shrink-0">
-              <button
-                onClick={() => decrementCart(item.product)}
-                className="w-7 h-full flex items-center justify-center"
-              >
-                <Minus size={14} className="text-dark-bg" />
-              </button>
-              <span className="font-bold text-dark-bg text-sm px-1 min-w-[20px] text-center">
-                {item.quantity}
-              </span>
-              <button
-                onClick={() => incrementCart(item.product)}
-                className="w-7 h-full flex items-center justify-center"
-              >
-                <Plus size={14} className="text-dark-bg" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-white p-4 sticky bottom-[-1rem] left-0 right-0 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] rounded-t-3xl border-t border-gray-100 z-10 space-y-2 mt-4 -mx-4">
-        <div className="flex justify-between items-center text-sm text-gray-500">
-          <span>Items Cost</span>
-          <span>₹{getOrderItemsTotal(cartItems)}</span>
-        </div>
-        <div className="flex justify-between items-center text-sm text-gray-500">
-          <span>Handling Fee</span>
-          <span>₹{handlingFee}</span>
-        </div>
-        <div className="flex justify-between items-center text-sm text-gray-500 border-b border-gray-100 pb-2">
-          <span>Delivery Fee</span>
-          <span>₹{deliveryFee}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2 pt-1">
-          <span className="font-bold text-lg text-dark-bg">Grand Total</span>
-          <span className="font-bold text-lg text-dark-bg">₹{getGrandTotal(cartItems)}</span>
-        </div>
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowConfirm(true)}
-          className="w-full bg-brand-yellow text-dark-bg font-bold py-3.5 rounded-xl shadow-sm text-base mt-2"
-        >
-          Checkout Now
-        </motion.button>
-      </div>
-
-      {showConfirm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="font-bold text-lg mb-4">Confirm Delivery Request</h3>
-            <div className="space-y-3 mb-6">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="delivery"
-                  checked={deliveryType === "Instant"}
-                  onChange={() => setDeliveryType("Instant")}
-                  className="w-4 h-4 text-brand-yellow focus:ring-brand-yellow"
-                />
-                <span className="text-sm font-medium">⚡ Instant</span>
-              </label>
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="delivery"
-                  checked={deliveryType === "1 Day"}
-                  onChange={() => setDeliveryType("1 Day")}
-                  className="w-4 h-4 text-brand-yellow focus:ring-brand-yellow"
-                />
-                <span className="text-sm font-medium">📦 1 Day</span>
-              </label>
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="delivery"
-                  checked={deliveryType === "1 Week"}
-                  onChange={() => setDeliveryType("1 Week")}
-                  className="w-4 h-4 text-brand-yellow focus:ring-brand-yellow"
-                />
-                <span className="text-sm font-medium">🚚 1 Week</span>
-              </label>
-            </div>
-
-            <h4 className="font-bold text-sm mb-2 text-dark-bg">
-              Payment Method
-            </h4>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-dark-bg">
-                Pay on Delivery
-              </span>
-              <div className="w-4 h-4 rounded-full border-4 border-brand-yellow bg-white"></div>
-            </div>
-
-            <p className="text-xs text-gray-500 mb-6">
-              Delivery fees are calculated by the store manager. The final
-              amount will be collected at the time of delivery. You can pay via
-              Cash or Online when you share your 4-digit Delivery PIN with the
-              rider.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="flex-1 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-medium"
-              >
-                Cancel
-              </button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleCheckout}
-                className="flex-1 py-2.5 rounded-lg bg-brand-yellow text-dark-bg font-bold"
-              >
-                Confirm
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function OrdersScreen({ orders }: any) {
-  const activeOrders = orders.filter(
-    (order: any) =>
-      order.status !== "Delivered" && order.status !== "Cancelled",
-  );
-
-  const getTrackingProgress = (status: string) => {
-    switch (status) {
-      case "Pending Approval":
-      case "Awaiting Payment":
-      case "Bill Sent":
-        return 10;
-      case "Confirmed":
-      case "Packed":
-        return 30;
-      case "Accepted":
-      case "Processing":
-      case "Ready for Delivery":
-      case "Accepted by Delivery Boy":
-        return 60;
-      case "Out for Delivery":
-        return 90;
-      case "Delivered":
-        return 100;
-      default:
-        return 0;
-    }
-  };
-
-  return (
-    <div className="flex flex-col w-full max-w-2xl mx-auto p-4 animate-in fade-in bg-white min-h-full">
-      {activeOrders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-8 text-gray-500 mt-20">
-          <Store size={48} className="text-gray-300 mb-4" />
-          <p className="text-lg font-medium text-dark-bg mb-2">
-            No active orders
-          </p>
-          <p className="text-sm text-center">
-            You have no active orders right now. Check your history to see past
-            orders.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6 pb-6 mt-2">
-          {activeOrders.map((order: any, index: number) => {
-            const total = order.totalBill || ((order.totalPrice || order.total || 0) + (order.platformFee || order.handlingFee || 0) + (order.deliveryFee || 0));
-            return (
-              <div
-                key={`${order.id}-${index}`}
-                className="bg-white rounded-2xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] p-5 border border-gray-50"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <span className="font-bold text-dark-bg text-sm">
-                    Order ID: {order.id.slice(0, 8)}...
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    {order.date}
-                  </span>
-                </div>
-
-                <div className="w-full relative bg-blue-50 rounded-lg h-32 flex items-center justify-center overflow-hidden mb-3">
-                  {/* Faded Map Background */}
-                  <Map className="absolute w-full h-full p-4 text-gray-300 opacity-50" />
-
-                  <div className="z-10 flex flex-col items-center">
-                    {order.status === "Out for Delivery" ? (
-                      <>
-                        <Bike className="w-12 h-12 text-pink-500" />
-                        <span className="font-bold text-pink-500 mt-1">
-                          Rider is on the way
-                        </span>
-                      </>
-                    ) : order.status === "Delivered" ? (
-                      <>
-                        <CheckCircle className="w-12 h-12 text-green-500" />
-                        <span className="font-bold text-green-500 mt-1">
-                          Delivered
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Store className="w-12 h-12 text-blue-500" />
-                        <span className="font-bold text-blue-500 mt-1">
-                          Processing at Store
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                  <div
-                    className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${getTrackingProgress(order.status)}%` }}
-                  ></div>
-                </div>
-
-                <div className="flex items-center mb-4">
-                  <div
-                    className={`w-1.5 h-1.5 rounded-full mr-2 ${order.status === "Out for Delivery" ? "bg-pink-500" : "bg-blue-500"}`}
-                  ></div>
-                  <span
-                    className={`text-xs font-bold ${order.status === "Out for Delivery" ? "text-pink-600" : "text-blue-600"}`}
-                  >
-                    {order.status || "Processing"}
-                  </span>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  {order.items &&
-                    order.items.map((item: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between text-xs text-gray-600"
-                      >
-                        <span>
-                          {item.quantity}x {item.name}
-                        </span>
-                        <span className="font-bold text-dark-bg">
-                          ₹{item.price * item.quantity}
-                        </span>
-                      </div>
-                    ))}
-                  <div className="flex justify-between text-xs text-gray-400 pt-1">
-                    <span>Handling Fee</span>
-                    <span className="font-bold text-dark-bg">
-                      ₹{order.platformFee || order.handlingFee || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-400 pt-1">
-                    <span>Delivery Fee</span>
-                    <span className="font-bold text-dark-bg">
-                      ₹{order.deliveryFee || 0}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                  <span className="font-bold text-dark-bg text-sm">
-                    Total Bill: ₹{total.toFixed(1)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function OrderHistoryScreen({ orders, onNavigate, onLeaveFeedback }: any) {
-  const pastOrders = orders.filter(
-    (order: any) =>
-      order.status === "Delivered" || order.status === "Cancelled",
-  );
-
-  return (
-    <div className="flex flex-col w-full max-w-2xl mx-auto p-4 animate-in fade-in bg-white min-h-full">
-      <div
-        className="flex items-center mb-6 cursor-pointer"
-        onClick={() => onNavigate("Back")}
-      >
-        <ArrowLeft size={24} className="text-dark-bg mr-3" />
-        <h2 className="text-xl font-bold text-dark-bg">Order History</h2>
-      </div>
-
-      {pastOrders.length === 0 ? (
-        <div className="flex items-center justify-center p-8 text-gray-500">
-          No past orders.
-        </div>
-      ) : (
-        <div className="space-y-4 pb-6 mt-2">
-          {pastOrders.map((order: any, index: number) => {
-            const total = order.totalBill || ((order.totalPrice || order.total || 0) + (order.platformFee || order.handlingFee || 0) + (order.deliveryFee || 0));
-            return (
-              <div
-                key={`${order.id}-${index}`}
-                className="bg-white rounded-2xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] p-5 border border-gray-50"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <span className="font-bold text-dark-bg text-sm">
-                    Order ID: {order.id.slice(0, 8)}...
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    {order.date}
-                  </span>
-                </div>
-
-                <div className="flex items-center mb-4">
-                  <div
-                    className={`w-1.5 h-1.5 rounded-full mr-2 ${order.status === "Cancelled" ? "bg-red-500" : "bg-green-500"}`}
-                  ></div>
-                  <span
-                    className={`text-xs font-bold ${order.status === "Cancelled" ? "text-red-600" : "text-green-600"}`}
-                  >
-                    {order.status || "Delivered"}
-                  </span>
-                  {order.status === "Delivered" && (
-                    <span className="ml-auto text-[10px] text-gray-500 font-medium">
-                      Paid via: {order.paymentMethod || "Cash"}
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  {order.items &&
-                    order.items.map((item: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between text-xs text-gray-600"
-                      >
-                        <span>
-                          {item.quantity}x {item.name}
-                        </span>
-                        <span className="font-bold text-dark-bg">
-                          ₹{item.price * item.quantity}
-                        </span>
-                      </div>
-                    ))}
-                  <div className="flex justify-between text-xs text-gray-400 pt-1">
-                    <span>Handling Fee</span>
-                    <span className="font-bold text-dark-bg">
-                      ₹{order.platformFee || order.handlingFee || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-400 pt-1">
-                    <span>Delivery Fee</span>
-                    <span className="font-bold text-dark-bg">
-                      ₹{order.deliveryFee || 0}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                  <span className="font-bold text-dark-bg text-sm">
-                    Total Bill: ₹{total.toFixed(1)}
-                  </span>
-                  {order.status === "Delivered" && (
-                    <button
-                      onClick={() => onLeaveFeedback && onLeaveFeedback(order)}
-                      className="text-[#FFC107] font-bold text-xs px-3 py-1.5 bg-[#FFC107]/10 rounded-full"
-                    >
-                      Leave Feedback
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FavoritesScreen({
-  products,
-  onNavigate,
-  favorites,
-  cartItems,
-  toggleFavorite,
-  incrementCart,
-  decrementCart,
-  user,
-}: any) {
-  const favoriteProducts = products.filter((p: any) =>
-    favorites.includes(p.id),
-  );
-  return (
-    <div className="flex flex-col w-full p-4 animate-in fade-in">
-      <div
-        className="flex items-center mb-6 cursor-pointer"
-        onClick={() => onNavigate("Back")}
-      >
-        <ArrowLeft size={24} className="text-dark-bg mr-3" />
-        <h2 className="text-xl font-bold text-dark-bg">My Favorites</h2>
-      </div>
-      {favoriteProducts.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-gray-400 mt-20">
-          You haven't saved any favorites yet.
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5 pb-6">
-          {favoriteProducts.map((product: any, index: number) => (
-            <ProductCard
-              onProductClick={(p: any) => onNavigate(`Product_${p.id}`)}
-              key={`${product.id}-${index}`}
-              product={product}
-              cartQuantity={
-                cartItems.find((i: any) => i.product.id === product.id)
-                  ?.quantity || 0
-              }
-              isFavorite={true}
-              onToggleFavorite={() => toggleFavorite(product.id)}
-              onIncrement={() => incrementCart(product)}
-              onDecrement={() => decrementCart(product)}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
 function NotificationsScreen({ notifications, onNavigate }: any) {
-  const handleNotificationClick = async (notif: any) => {
-    if (!notif.isRead && auth?.currentUser) {
-      if (onNavigate) {
-         onNavigate("optimistic_read_" + notif.id);
-      }
-      try {
-        const ref1 = doc(db, "users", auth.currentUser.uid, "notifications", notif.id);
-        const ref2 = doc(db, "notifications", notif.id);
-        const ref3 = doc(db, "userNotifications", notif.id);
-        await Promise.allSettled([
-          setDoc(ref1, { isRead: true }, { merge: true }),
-          setDoc(ref2, { isRead: true }, { merge: true }),
-          setDoc(ref3, { isRead: true }, { merge: true })
-        ]);
-      } catch (e) {
-        console.error("Error marking notification as read:", e);
-      }
-    }
-  };
+    const handleNotificationClick = async (notif: any) => {
+        if (!notif.isRead) {
+            onNavigate("optimistic_read_" + notif.id);
+            try {
+                await updateDoc(doc(db, "notifications", notif.id), { isRead: true });
+            } catch (error) {
+                console.error("Error updating notification", error);
+            }
+        }
+    };
+    
+    const handleDeleteNotification = async (notif: any, e: any) => {
+        e.stopPropagation();
+        onNavigate("optimistic_delete_" + notif.id);
+        try {
+            await deleteDoc(doc(db, "notifications", notif.id));
+            toast.success("Notification deleted");
+        } catch (error) {
+            console.error("Error deleting notification", error);
+        }
+    };
+    
+    return (
+        <div className="flex flex-col h-full bg-white animate-fade-in p-4">
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center cursor-pointer" onClick={() => onNavigate("Back")}>
+                    <ArrowLeft size={24} className="text-dark-bg mr-3" />
+                    <h2 className="text-xl font-bold text-dark-bg">Notifications</h2>
+                </div>
+                <button 
+                  onClick={async () => {
+                     try {
+                        toast("Requesting notification permission...");
+                        if ("Notification" in window) {
+                           const perm = await Notification.requestPermission();
+                           if (perm === "granted" && (window as any).requestFCMToken) {
+                              const success = await (window as any).requestFCMToken();
+                              if (success) toast.success("Push Notifications Enabled!");
+                              else toast.error("Failed to get push token. Please make sure you are in a new tab.");
+                           } else if (perm === "granted") {
+                              toast.success("Permission granted. Please refresh to receive notifications.");
+                           } else {
+                              toast.error(
+                                "Push notifications cannot be enabled inside this embedded preview (Permission: " + perm + "). \n\nPlease click the \"Open in new tab\" icon at the top right of the screen to enable push notifications.",
+                                { duration: 6000 }
+                              );
+                           }
+                        } else {
+                           toast.error("Push notifications are not supported in this browser.");
+                        }
+                     } catch (e: any) {
+                        console.error(e);
+                        toast.error("Error: " + (e.message || "Unknown error"));
+                     }
+                  }}
+                  className="bg-brand-yellow text-dark-bg px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm active:scale-95 hover:opacity-90 transition-all"
+                >
+                   Enable Push
+                </button>
+            </div>
 
-  const handleDeleteNotification = async (notif: any, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (auth?.currentUser) {
-      if (onNavigate) {
-         onNavigate("optimistic_delete_" + notif.id);
-      }
-      try {
-        const ref1 = doc(db, "users", auth.currentUser.uid, "notifications", notif.id);
-        const ref2 = doc(db, "notifications", notif.id);
-        const ref3 = doc(db, "userNotifications", notif.id);
-        await Promise.allSettled([
-          deleteDoc(ref1),
-          deleteDoc(ref2),
-          deleteDoc(ref3)
-        ]);
-      } catch (e) {
-        console.error("Error deleting notification:", e);
-      }
-    }
-  };
-
-  return (
-    <div className="flex flex-col w-full p-4 animate-in fade-in">
-      <div
-        className="flex items-center mb-6 cursor-pointer"
-        onClick={() => onNavigate("Back")}
-      >
-        <ArrowLeft size={24} className="text-dark-bg mr-3" />
-        <h2 className="text-xl font-bold text-dark-bg">Notifications</h2>
-      </div>
       
       {notifications?.length > 20 && (
         <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm flex flex-col gap-1 animate-pulse">
@@ -2407,11 +744,11 @@ function ProfileScreen({
         },
         { merge: true },
       );
-      alert("Settings saved successfully!");
+      toast.success("Settings saved successfully!");
       setIsEditing(false);
     } catch (e) {
       console.error(e);
-      alert("Error saving settings");
+      toast.error("Error saving settings");
     } finally {
       setLoading(false);
     }
@@ -2419,7 +756,7 @@ function ProfileScreen({
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      toast.error("Geolocation is not supported by your browser");
       return;
     }
     setIsLocating(true);
@@ -2434,18 +771,18 @@ function ProfileScreen({
           if (data && data.display_name) {
             setAddress(data.display_name);
           } else {
-            alert("Could not fetch address details.");
+            toast.error("Could not fetch address details.");
           }
         } catch (e) {
           console.error(e);
-          alert("Error fetching address.");
+          toast.error("Error fetching address.");
         } finally {
           setIsLocating(false);
         }
       },
       (error) => {
         console.error(error);
-        alert("Unable to retrieve your location");
+        toast.error("Unable to retrieve your location");
         setIsLocating(false);
       },
     );
@@ -2471,7 +808,7 @@ function ProfileScreen({
       await updateProfile(user, { photoURL: url });
     } catch (error) {
       console.error(error);
-      alert("Failed to upload image. Please try again.");
+      toast.error("Failed to upload image. Please try again.");
     } finally {
       setImageUploadLoading(false);
     }
@@ -2648,7 +985,7 @@ function ProductCard({
   const images = product.imageUrls || product.images || (product.imageUrl || product.image ? [product.imageUrl || product.image] : ["/AppIcon-512x512.png"]);
   const extraImagesCount = images.length > 1 ? images.length - 1 : 0;
   return (
-    <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col h-[200px] md:h-[250px] border border-gray-100 transition-shadow relative">
+    <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-md overflow-hidden flex flex-col h-[200px] md:h-[250px] border border-gray-100 transition-all hover:-translate-y-1 relative">
       <div
         className="relative h-[100px] md:h-[130px] w-full shrink-0 p-1 flex items-center justify-center border-b border-gray-50 cursor-pointer"
         onClick={() => onProductClick && onProductClick(product)}
