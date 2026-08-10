@@ -67,6 +67,7 @@ export default function MainAppScreen() {
       setNotifications1(updateFn);
       setNotifications2(updateFn);
       setNotifications3(updateFn);
+      setNotifications4(updateFn);
       return;
     }
     if (item.startsWith("optimistic_delete_")) {
@@ -75,6 +76,7 @@ export default function MainAppScreen() {
       setNotifications1(filterFn);
       setNotifications2(filterFn);
       setNotifications3(filterFn);
+      setNotifications4(filterFn);
       return;
     }
     if (item === "Back") {
@@ -114,9 +116,10 @@ export default function MainAppScreen() {
   const [notifications1, setNotifications1] = useState<any[]>([]);
   const [notifications2, setNotifications2] = useState<any[]>([]);
   const [notifications3, setNotifications3] = useState<any[]>([]);
+  const [notifications4, setNotifications4] = useState<any[]>([]);
 
   const notifications = React.useMemo(() => {
-    const all = [...notifications1, ...notifications2, ...notifications3];
+    const all = [...notifications1, ...notifications2, ...notifications3, ...notifications4];
     const uniqueMap = new window.Map();
     all.forEach(n => {
       if (!uniqueMap.has(n.message)) uniqueMap.set(n.message, n);
@@ -368,6 +371,7 @@ export default function MainAppScreen() {
         ...data,
         timestamp: ts,
         title: data.title || data.type || "Notification",
+        isRead: data.isRead || (data.readBy && auth?.currentUser?.uid && data.readBy.includes(auth.currentUser.uid)) || data.read || false,
         message: data.message || data.body || data.text || data.content || ""
       };
     };
@@ -391,6 +395,13 @@ export default function MainAppScreen() {
       onSnapshot(query(collection(db, "notifications"), where("customerId", "==", user.uid)), (snapshot) => {
           setNotifications3(snapshot.docs.map(mapNotification));
         }, (error) => { console.warn("Notifications 3 snapshot error:", error.message); }),
+    );
+
+    // Listen to global notifications (where isGlobal == true)
+    unsubs.push(
+      onSnapshot(query(collection(db, "notifications"), where("isGlobal", "==", true)), (snapshot) => {
+          setNotifications4(snapshot.docs.map(mapNotification));
+        }, (error) => { console.warn("Notifications 4 snapshot error:", error.message); }),
     );
 
     // User profile data (favorites, address, phone)
@@ -2283,7 +2294,7 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
         const ref3 = doc(db, "userNotifications", notif.id);
         await Promise.allSettled([
           setDoc(ref1, { isRead: true }, { merge: true }),
-          setDoc(ref2, { isRead: true }, { merge: true }),
+          setDoc(ref2, notif.isGlobal ? { readBy: arrayUnion(auth.currentUser.uid) } : { isRead: true }, { merge: true }),
           setDoc(ref3, { isRead: true }, { merge: true })
         ]);
       } catch (e) {

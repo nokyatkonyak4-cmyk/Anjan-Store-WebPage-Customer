@@ -1,38 +1,52 @@
 const fs = require('fs');
 let content = fs.readFileSync('src/components/MainAppScreen.tsx', 'utf8');
 
-if (!content.includes("SecondaryBannerSlider")) {
-    content = content.replace(
-        "import { seedDatabase } from '../seedData';",
-        "import { seedDatabase } from '../seedData';\nimport SecondaryBannerSlider from './SecondaryBannerSlider';"
-    );
+// 1. Add state variable
+content = content.replace(
+  'const [notifications3, setNotifications3] = useState<any[]>([]);',
+  'const [notifications3, setNotifications3] = useState<any[]>([]);\n  const [notifications4, setNotifications4] = useState<any[]>([]);'
+);
+
+// 2. Add to useMemo all array
+content = content.replace(
+  'const all = [...notifications1, ...notifications2, ...notifications3];',
+  'const all = [...notifications1, ...notifications2, ...notifications3, ...notifications4];'
+);
+
+// 3. Add updateFn
+content = content.replace(
+  'setNotifications3(updateFn);',
+  'setNotifications3(updateFn);\n      setNotifications4(updateFn);'
+);
+
+// 4. Add filterFn
+content = content.replace(
+  'setNotifications3(filterFn);',
+  'setNotifications3(filterFn);\n      setNotifications4(filterFn);'
+);
+
+// 5. Add global notifications listener
+const searchListener = `    // Listen to notifications (where customerId == currentUser.uid)
+    unsubs.push(
+      onSnapshot(query(collection(db, "notifications"), where("customerId", "==", user.uid)), (snapshot) => {
+          setNotifications3(snapshot.docs.map(mapNotification));
+        }, (error) => { console.warn("Notifications 3 snapshot error:", error.message); }),
+    );`;
+
+const newListener = searchListener + `
+
+    // Listen to global notifications (where isGlobal == true)
+    unsubs.push(
+      onSnapshot(query(collection(db, "notifications"), where("isGlobal", "==", true)), (snapshot) => {
+          setNotifications4(snapshot.docs.map(mapNotification));
+        }, (error) => { console.warn("Notifications 4 snapshot error:", error.message); }),
+    );`;
+
+if(content.includes(searchListener)) {
+    content = content.replace(searchListener, newListener);
+    fs.writeFileSync('src/components/MainAppScreen.tsx', content);
+    console.log("Successfully patched MainAppScreen.tsx!");
+} else {
+    console.log("Could not find the listener block to replace.");
 }
 
-const oldBannerBlock = `      {!searchQuery && banners && banners.length > 0 && (
-        <div className="px-4 mb-6">
-          <div className="w-full h-[160px] bg-white rounded-2xl overflow-hidden shadow-sm relative">
-             <img src={banners[0].imageUrl || banners[0].image || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=800"} alt={banners[0].title} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=800"; }} />
-          </div>
-        </div>
-      )}`;
-
-const newBannerBlock = `      {!searchQuery && banners && banners.length > 0 && (
-        <div className="mb-4">
-          <SecondaryBannerSlider
-            slides={banners.map((b: any) => ({
-              id: b.id,
-              title: b.title || '',
-              subtitle: b.subtitle || '',
-              imageUrl: b.imageUrl || b.image || '',
-              badgeText: b.badgeText || '',
-              badgeColor: b.badgeColor || '#4CAF50',
-              link: b.link || ''
-            }))}
-            onSlideClick={(link) => link && window.open(link, '_blank')}
-          />
-        </div>
-      )}`;
-
-content = content.replace(oldBannerBlock, newBannerBlock);
-
-fs.writeFileSync('src/components/MainAppScreen.tsx', content);
