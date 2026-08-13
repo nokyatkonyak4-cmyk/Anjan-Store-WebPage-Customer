@@ -122,7 +122,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
       <div className="flex flex-col min-h-[100dvh] w-full bg-brand-yellow items-center justify-center p-6 transition-all active:scale-95 hover:opacity-90">
         <div className="w-full max-w-md bg-white/20 md:bg-white md:shadow-xl md:rounded-2xl p-0 md:p-8 rounded-none border-none">
           <div className="flex justify-center mb-6 flex">
-            <img src="/AppIcon-512x512.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
+            <img src="/app-picon-512x512-.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
           </div>
           <h1 className="text-2xl font-semibold text-dark-bg mb-4 md:text-center">
             Reset Password
@@ -188,7 +188,7 @@ export default function AuthScreen({ onLoginSuccess }: { onLoginSuccess: () => v
     <div className="flex flex-col min-h-[100dvh] w-full bg-brand-yellow items-center justify-center p-6 transition-all active:scale-95 hover:opacity-90">
       <div className="w-full max-w-md bg-white/20 md:bg-white md:shadow-xl md:rounded-2xl p-0 md:p-8 rounded-none border-none">
         <div className="flex justify-center mb-6 flex">
-          <img src="/AppIcon-512x512.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
+          <img src="/app-picon-512x512-.png" alt="Logo" className="w-16 h-16 object-contain bg-white rounded-xl p-1" />
         </div>
         <h1 className="text-2xl font-semibold text-dark-bg mb-8 md:text-center">
           {isSignUp ? 'Create Account' : 'Welcome Back'}

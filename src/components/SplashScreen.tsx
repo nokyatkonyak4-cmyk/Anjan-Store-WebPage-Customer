@@ -13,9 +13,9 @@ export default function SplashScreen({ onSplashFinished }: { onSplashFinished: (
       timer2 = setTimeout(() => {
         const isLoggedIn = !!auth?.currentUser;
         onSplashFinished(isLoggedIn);
-      }, 1500);
+      }, 1000);
       
-    }, 1500);
+    }, 1000);
 
     return () => {
       clearTimeout(timer1);
@@ -27,14 +27,14 @@ export default function SplashScreen({ onSplashFinished }: { onSplashFinished: (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#FFC107]">
       {step === 1 ? (
         <img 
-          src="/AppIcon-512x512.png" 
+          src="/app-picon-512x512-.png" 
           alt="App Logo 1" 
           className="w-[60%] max-w-[250px] h-[60%] max-h-[250px] object-contain transition-all duration-300" 
           style={{ filter: 'drop-shadow(3px 3px 0 white) drop-shadow(-3px -3px 0 white) drop-shadow(3px -3px 0 white) drop-shadow(-3px 3px 0 white)' }}
         />
       ) : (
         <img 
-          src="/app-icon.png.png" 
+          src="/splash_icon_2.png.png" 
           alt="App Logo 2" 
           className="w-[60%] max-w-[250px] h-[60%] max-h-[250px] object-contain transform scale-110 transition-all duration-300" 
         />

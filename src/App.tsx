@@ -11,7 +11,7 @@ import { auth, isFirebaseConfigured, db, messaging } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { onMessage, getToken } from "firebase/messaging";
 import { Toaster, toast } from 'react-hot-toast';
-import { doc, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, onSnapshot, collection, addDoc } from "firebase/firestore";
 
 function AppRouter() {
   const [user, setUser] = useState<any>(null);
@@ -135,13 +135,28 @@ function AppRouter() {
   useEffect(() => {
     if (messaging) {
       // Handle foreground messages
-      const unsubscribe = onMessage(messaging, (payload) => {
+      const unsubscribe = onMessage(messaging, async (payload) => {
         console.log("Message received. ", payload);
+        
+        // Also save this notification to the built-in bell icon list
+        if (auth.currentUser && db) {
+            try {
+                await addDoc(collection(db, "users", auth.currentUser.uid, "notifications"), {
+                    title: payload.notification?.title || "Update from Anjan Store",
+                    body: payload.notification?.body || "You have a new message.",
+                    data: payload.data || null,
+                    isRead: false,
+                    timestamp: Date.now()
+                });
+            } catch (err) {
+                console.error("Failed to save push notification to DB:", err);
+            }
+        }
         const notificationTitle =
           payload.notification?.title || "Update from Anjan Store";
         const notificationOptions = {
           body: payload.notification?.body || "You have a new message.",
-          icon: "/AppIcon-512x512.png",
+          icon: "/app-picon-512x512-.png",
           data: payload.data,
         };
 

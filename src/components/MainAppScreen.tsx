@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AuthScreen from "./AuthScreen";
+import { OrderHistoryScreen } from "./OrderHistoryScreen";
 import { HomeScreen, CartScreen, CategoriesScreen, FavoritesScreen, ProductDetailsScreen, CategoryScreen } from "./Screens";
 import { auth, db, storage, isFirebaseConfigured } from "../firebase";
 import { onAuthStateChanged, signOut, updateProfile } from "firebase/auth";
@@ -111,13 +112,14 @@ export default function MainAppScreen() {
   // Real data state
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [productReviews, setProductReviews] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
   const [notifications1, setNotifications1] = useState<any[]>([]);
   const [notifications2, setNotifications2] = useState<any[]>([]);
   const [notifications3, setNotifications3] = useState<any[]>([]);
 
-  const notifications = React.useMemo(() => {
+    const notifications = React.useMemo(() => {
     const all = [...notifications1, ...notifications2, ...notifications3];
     const uniqueMap = new window.Map();
     all.forEach(n => {
@@ -127,6 +129,8 @@ export default function MainAppScreen() {
       (a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0)
     );
   }, [notifications1, notifications2, notifications3]);
+
+  const unreadNotificationsCount = notifications.filter((n: any) => !n.isRead).length;
 
   const previousOrderStatuses = React.useRef<Record<string, string>>({});
 
@@ -223,6 +227,19 @@ export default function MainAppScreen() {
           );
         },
         (error) => console.warn("Products snapshot error:", error?.message)
+      )
+    );
+
+    // Listen to Product Reviews
+    unsubs.push(
+      onSnapshot(
+        collection(db, "productReviews"),
+        (snapshot) => {
+          setProductReviews(
+            snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as any) }))
+          );
+        },
+        (error) => console.warn("Product Reviews snapshot error:", error?.message)
       )
     );
 
@@ -464,6 +481,19 @@ export default function MainAppScreen() {
     }
   };
 
+  const augmentedProducts = React.useMemo(() => {
+    return products.map(product => {
+      const reviews = productReviews.filter(r => r.productId === product.id);
+      const totalRating = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+      const averageRating = reviews.length > 0 ? (totalRating / reviews.length) : 0;
+      return {
+        ...product,
+        averageRating,
+        reviewCount: reviews.length,
+      };
+    });
+  }, [products, productReviews]);
+
   return (
     <div className="flex h-[100dvh] w-full bg-light-bg overflow-hidden">
 
@@ -473,7 +503,7 @@ export default function MainAppScreen() {
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
               <img
-                src="/AppIcon-512x512.png"
+                src="/app-picon-512x512-.png"
                 alt="Logo"
                 className="w-full h-full object-contain"
               />
@@ -525,7 +555,7 @@ export default function MainAppScreen() {
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-3 md:hidden">
               <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden">
-                <img src="/AppIcon-512x512.png" alt="Logo" className="w-full h-full object-contain" />
+                <img src="/app-picon-512x512-.png" alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-lg leading-tight">Anjan Store</span>
@@ -551,6 +581,11 @@ export default function MainAppScreen() {
                 className="relative md:hover:bg-white/50 md:p-2 md:rounded-full transition-all active:scale-90 hover:scale-110"
               >
                 <Bell size={24} className="text-dark-bg" />
+                {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                        {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                    </span>
+                )}
               </button>
               <button
                 onClick={() => handleNavigate("Profile")}
@@ -564,14 +599,16 @@ export default function MainAppScreen() {
 
         <div className="flex-1 overflow-y-auto pb-6 scrollbar-hide md:px-4 lg:px-8">
           <div className="w-full max-w-7xl mx-auto">
-             {selectedItem === 'Home' && <HomeScreen searchQuery={searchQuery} setSearchQuery={setSearchQuery} onNavigate={handleNavigate} products={products} categories={categories} banners={banners} favorites={favorites} cartItems={cartItems} incrementCart={incrementCart} decrementCart={decrementCart} storeSettings={storeSettings} toggleFavorite={toggleFavorite} />}
+             {selectedItem === 'Home' && <HomeScreen searchQuery={searchQuery} setSearchQuery={setSearchQuery} onNavigate={handleNavigate} products={augmentedProducts} categories={categories} banners={banners} favorites={favorites} cartItems={cartItems} incrementCart={incrementCart} decrementCart={decrementCart} storeSettings={storeSettings} toggleFavorite={toggleFavorite} />}
              {selectedItem === 'Cart' && <CartScreen cartItems={cartItems} setCartItems={setCartItems} incrementCart={incrementCart} decrementCart={decrementCart} onNavigate={handleNavigate} storeSettings={storeSettings} />}
              {selectedItem === 'Categories' && <CategoriesScreen categories={categories} onNavigate={handleNavigate} />}
-             {selectedItem === 'Favorites' && <FavoritesScreen favorites={favorites} products={products} onNavigate={handleNavigate} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
-             {selectedItem.startsWith('Product_') && <ProductDetailsScreen productId={selectedItem.replace('Product_', '')} products={products} onNavigate={handleNavigate} incrementCart={incrementCart} />}
-             {selectedItem.startsWith('Category_') && <CategoryScreen categoryId={selectedItem.replace('Category_', '')} products={products} categories={categories} onNavigate={handleNavigate} cartItems={cartItems} favorites={favorites} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
+             {selectedItem === 'Favorites' && <FavoritesScreen favorites={favorites} products={augmentedProducts} onNavigate={handleNavigate} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
+             {selectedItem.startsWith('Product_') && <ProductDetailsScreen productId={selectedItem.replace('Product_', '')} products={augmentedProducts} onNavigate={handleNavigate} incrementCart={incrementCart} />}
+             {selectedItem.startsWith('Category_') && <CategoryScreen categoryId={selectedItem.replace('Category_', '')} products={augmentedProducts} categories={categories} onNavigate={handleNavigate} cartItems={cartItems} favorites={favorites} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
              {selectedItem === 'Profile' && <ProfileScreen savedAddress={savedAddress} savedPhone={savedPhone} profileImage={profileImage} onNavigate={handleNavigate} />}
              {selectedItem === 'Notifications' && <NotificationsScreen notifications={notifications} onNavigate={handleNavigate} />}
+             {selectedItem === 'OrderHistory' && <OrderHistoryScreen orders={orders} products={augmentedProducts} onNavigate={handleNavigate} />}
+             {selectedItem === 'Orders' && <OrderHistoryScreen orders={orders} products={augmentedProducts} onNavigate={handleNavigate} />}
           </div>
         </div>
 

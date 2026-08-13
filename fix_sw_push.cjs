@@ -1,20 +1,16 @@
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js');
+const fs = require('fs');
+let content = fs.readFileSync('public/firebase-messaging-sw.js', 'utf8');
 
-const firebaseConfig = {
-  projectId: "gen-lang-client-0690213156",
-  appId: "1:408212829164:web:7e5677ae980e592d5986c9",
-  apiKey: "AIzaSyDKRVKnHVL6V0OdaqHTPqkBHXMfeTrs-qs",
-  authDomain: "gen-lang-client-0690213156.firebaseapp.com",
-  messagingSenderId: "408212829164",
-  storageBucket: "gen-lang-client-0690213156.firebasestorage.app"
-};
+const importStatement = `importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js');`;
 
-firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
+if (!content.includes('firebase-firestore-compat.js')) {
+    content = content.replace(
+        `importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');`,
+        `importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');\n${importStatement}`
+    );
+}
 
-
+const idbLogic = `
 function getUidFromIndexedDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('firebaseLocalStorageDb');
@@ -46,8 +42,11 @@ function getUidFromIndexedDB() {
         };
     });
 }
+`;
 
-messaging.onBackgroundMessage(async (payload) => {
+const backgroundMsgRegex = /messaging\.onBackgroundMessage\(\(payload\) => \{([\s\S]*?)self\.registration\.showNotification\(notificationTitle, notificationOptions\);\n\}\);/;
+
+const newBackgroundMsgLogic = `messaging.onBackgroundMessage(async (payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
   const notificationTitle = payload.notification?.title || "Anjan Store Update";
   
@@ -58,7 +57,7 @@ messaging.onBackgroundMessage(async (payload) => {
   
   const notificationOptions = {
     body: payload.notification?.body,
-    icon: '/app-picon-512x512-.png',
+    icon: '/AppIcon-512x512.png',
     data: {
       url: url
     }
@@ -82,23 +81,11 @@ messaging.onBackgroundMessage(async (payload) => {
   }
 
   self.registration.showNotification(notificationTitle, notificationOptions);
-});
+});`;
 
-self.addEventListener('notificationclick', function(event) {
-  event.notification.close();
-  const urlToOpen = event.notification.data?.url || '/';
-  
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url.includes(urlToOpen) && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
-  );
-});
+if (!content.includes('getUidFromIndexedDB')) {
+    content = content.replace(/messaging\.onBackgroundMessage\(\(payload\) => \{[\s\S]*?\}\);/, idbLogic + '\n' + newBackgroundMsgLogic);
+}
+
+fs.writeFileSync('public/firebase-messaging-sw.js', content);
+console.log("Updated firebase-messaging-sw.js to save background push to Firestore");

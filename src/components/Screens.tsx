@@ -1,3 +1,7 @@
+import toast from 'react-hot-toast';
+import { db, auth } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, addDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
 import { Search, ShoppingCart, Heart, ArrowLeft, Star, Plus, Minus } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -19,7 +23,7 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
                 id: `campaign_${topSeller.id}`,
                 title: "Top Seller",
                 subtitle: topSeller.name,
-                imageUrl: topSeller.imageUrls?.[0] || topSeller.imageUrl || "/AppIcon-512x512.png",
+                imageUrl: topSeller.imageUrls?.[0] || topSeller.imageUrl || "/app-picon-512x512-.png",
                 badgeText: "POPULAR",
                 badgeColor: "#4CAF50",
                 link: `Product_${topSeller.id}`
@@ -33,7 +37,7 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
                 id: `campaign_${trending.id}`,
                 title: "Trending Now",
                 subtitle: trending.name,
-                imageUrl: trending.imageUrls?.[0] || trending.imageUrl || "/AppIcon-512x512.png",
+                imageUrl: trending.imageUrls?.[0] || trending.imageUrl || "/app-picon-512x512-.png",
                 badgeText: "HOT",
                 badgeColor: "#FF5722",
                 link: `Product_${trending.id}`
@@ -46,7 +50,7 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
                 id: `campaign_${newest.id}`,
                 title: "New Arrivals",
                 subtitle: newest.name,
-                imageUrl: newest.imageUrls?.[0] || newest.imageUrl || "/AppIcon-512x512.png",
+                imageUrl: newest.imageUrls?.[0] || newest.imageUrl || "/app-picon-512x512-.png",
                 badgeText: "NEW",
                 badgeColor: "#2196F3",
                 link: `Product_${newest.id}`
@@ -106,7 +110,7 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
                             {categories.map((cat: any) => (
                                 <div key={cat.id} onClick={() => onNavigate(`Category_${cat.id}`)} className="flex flex-col items-center space-y-2 cursor-pointer min-w-[70px]">
                                     <div className="w-14 h-14 bg-white rounded-full p-2 shadow-sm flex items-center justify-center">
-                                        <img src={cat.imageUrl || "/AppIcon-512x512.png"} alt={cat.name} className="w-full h-full object-contain" />
+                                        <img src={cat.imageUrl || "/app-picon-512x512-.png"} alt={cat.name} className="w-full h-full object-contain" />
                                     </div>
                                     <span className="text-xs font-medium text-center">{cat.name}</span>
                                 </div>
@@ -192,6 +196,38 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
 
 export function CartScreen({ cartItems, setCartItems, incrementCart, decrementCart, onNavigate, storeSettings }: any) {
     const total = cartItems.reduce((acc: number, item: any) => acc + (item.product.price * item.quantity), 0);
+
+    const handleCheckout = async () => {
+        if (!auth.currentUser) {
+            toast.error("Please login to place an order");
+            return;
+        }
+        try {
+            const newOrderRef = await addDoc(collection(db, "orders"), {
+                customerId: auth.currentUser.uid,
+                customerName: auth.currentUser.displayName || auth.currentUser.email || "Customer",
+                items: cartItems.map((item: any) => ({
+                    productId: item.product.id,
+                    name: item.product.name,
+                    price: item.product.price,
+                    quantity: item.quantity,
+                    imageUrl: item.product.imageUrls?.[0] || item.product.imageUrl || item.product.image || "/app-picon-512x512-.png"
+                })),
+                totalPrice: total,
+                deliveryFee: storeSettings?.deliveryFee || 0,
+                status: "Pending Approval",
+                createdAt: new Date(),
+                createdAtMs: Date.now()
+            });
+            setCartItems([]);
+            toast.success("Order placed successfully!");
+            window.location.href = `/digital_bill/${newOrderRef.id}`;
+        } catch (error: any) {
+            console.error("Checkout error", error);
+            toast.error("Failed to place order: " + error.message);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-white p-4 rounded-2xl shadow-sm">
             <h2 className="text-xl font-bold mb-4">Your Cart</h2>
@@ -206,7 +242,7 @@ export function CartScreen({ cartItems, setCartItems, incrementCart, decrementCa
                     <div className="flex-1 overflow-y-auto space-y-4">
                         {cartItems.map((item: any) => (
                             <div key={item.product.id} className="flex items-center space-x-4 border-b border-gray-100 pb-4">
-                                <img src={item.product.imageUrls?.[0] || item.product.imageUrl || "/AppIcon-512x512.png"} className="w-16 h-16 object-contain bg-gray-50 rounded-lg" />
+                                <img src={item.product.imageUrls?.[0] || item.product.imageUrl || "/app-picon-512x512-.png"} className="w-16 h-16 object-contain bg-gray-50 rounded-lg" />
                                 <div className="flex-1">
                                     <h3 className="font-bold text-sm">{item.product.name}</h3>
                                     <span className="text-brand-yellow font-bold">₹{item.product.price}</span>
@@ -224,7 +260,7 @@ export function CartScreen({ cartItems, setCartItems, incrementCart, decrementCa
                             <span>Total</span>
                             <span>₹{total.toFixed(2)}</span>
                         </div>
-                        <button className="w-full bg-brand-yellow text-dark-bg py-3 rounded-full font-bold shadow-md transition-all active:scale-95 hover:opacity-90">Checkout</button>
+                        <button onClick={handleCheckout} className="w-full bg-brand-yellow text-dark-bg py-3 rounded-full font-bold shadow-md transition-all active:scale-95 hover:opacity-90">Checkout</button>
                     </div>
                 </>
             )}
@@ -239,7 +275,7 @@ export function CategoriesScreen({ categories, onNavigate }: any) {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {categories.map((cat: any) => (
                     <div key={cat.id} onClick={() => onNavigate(`Category_${cat.id}`)} className="bg-white rounded-xl shadow-sm p-4 flex flex-col items-center cursor-pointer hover:shadow-md transition">
-                        <img src={cat.imageUrl || "/AppIcon-512x512.png"} className="w-16 h-16 object-contain mb-3" />
+                        <img src={cat.imageUrl || "/app-picon-512x512-.png"} className="w-16 h-16 object-contain mb-3" />
                         <h3 className="font-bold text-center text-sm">{cat.name}</h3>
                     </div>
                 ))}
@@ -282,10 +318,17 @@ export function ProductDetailsScreen({ productId, products, onNavigate, incremen
         <div className="bg-white min-h-screen">
             <div className="relative">
                 <button onClick={() => onNavigate("Back")} className="absolute top-4 left-4 z-10 bg-white/80 p-2 rounded-full shadow-md transition-all active:scale-95 hover:opacity-90"><ArrowLeft size={20}/></button>
-                <img src={product.imageUrls?.[0] || product.imageUrl || "/AppIcon-512x512.png"} className="w-full h-[300px] object-contain bg-gray-50" />
+                <img src={product.imageUrls?.[0] || product.imageUrl || "/app-picon-512x512-.png"} className="w-full h-[300px] object-contain bg-gray-50" />
             </div>
             <div className="p-6">
                 <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
+                {product.reviewCount > 0 && (
+                    <div className="flex items-center space-x-1 mb-2">
+                        <Star size={16} className="fill-[#FFC107] text-[#FFC107]" />
+                        <span className="text-sm font-bold text-dark-bg">{product.averageRating?.toFixed(1)}</span>
+                        <span className="text-sm text-gray-500">({product.reviewCount} reviews)</span>
+                    </div>
+                )}
                 <p className="text-brand-yellow font-bold text-xl mb-4">₹{product.price}</p>
                 <p className="text-gray-600 mb-8">{product.description || "No description available."}</p>
                 <button onClick={() => incrementCart(product)} className="w-full bg-brand-yellow text-dark-bg py-4 rounded-full font-bold text-lg shadow-md flex items-center justify-center transition-all active:scale-95 hover:opacity-90">
@@ -333,7 +376,7 @@ export function ProductCard({
   onDecrement,
   onProductClick,
 }: any) {
-  const images = product.imageUrls || product.images || (product.imageUrl || product.image ? [product.imageUrl || product.image] : ["/AppIcon-512x512.png"]);
+  const images = product.imageUrls || product.images || (product.imageUrl || product.image ? [product.imageUrl || product.image] : ["/app-picon-512x512-.png"]);
   const extraImagesCount = images.length > 1 ? images.length - 1 : 0;
   return (
     <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-md overflow-hidden flex flex-col h-[200px] md:h-[250px] border border-gray-100 transition-all hover:-translate-y-1 relative">
@@ -348,7 +391,7 @@ export function ProductCard({
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src =
-              "/AppIcon-512x512.png";
+              "/app-picon-512x512-.png";
           }}
         />
         {extraImagesCount > 0 && (
@@ -383,6 +426,13 @@ export function ProductCard({
           <span className="inline-block text-[9px] md:text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-sm mb-1">
             {product.category}
           </span>
+          {product.reviewCount > 0 && (
+            <div className="flex items-center space-x-1 mb-1">
+              <Star size={10} className="fill-[#FFC107] text-[#FFC107]" />
+              <span className="text-[9px] font-bold text-dark-bg">{product.averageRating?.toFixed(1)}</span>
+              <span className="text-[9px] text-gray-400">({product.reviewCount})</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-between mt-auto pt-1">
           <span className="font-bold text-xs md:text-sm text-dark-bg">

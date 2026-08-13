@@ -49,10 +49,10 @@ export default function SecondaryBannerSlider({ slides, autoSlideInterval = 4000
                  onClick={() => onSlideClick && onSlideClick(slide)}
                >
                  <img 
-                   src={slide.imageUrl || "/AppIcon-512x512.png"} 
+                   src={slide.imageUrl || "/app-picon-512x512-.png"} 
                    alt={slide.title} 
                    className="w-full h-full object-contain"
-                   onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="/AppIcon-512x512.png"; }}
+                   onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src="/app-picon-512x512-.png"; }}
                  />
                  
                  {/* Gradient overlay */}
