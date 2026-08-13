@@ -156,7 +156,7 @@ function AppRouter() {
           payload.notification?.title || "Update from Anjan Store";
         const notificationOptions = {
           body: payload.notification?.body || "You have a new message.",
-          icon: "/app-picon-512x512-.png",
+          icon: "/app-picon-512x512-.png.png",
           data: payload.data,
         };
 

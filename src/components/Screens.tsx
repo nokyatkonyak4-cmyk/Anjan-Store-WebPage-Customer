@@ -23,7 +23,7 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
                 id: `campaign_${topSeller.id}`,
                 title: "Top Seller",
                 subtitle: topSeller.name,
-                imageUrl: topSeller.imageUrls?.[0] || topSeller.imageUrl || "/app-picon-512x512-.png",
+                imageUrl: topSeller.imageUrls?.[0] || topSeller.imageUrl || "/app-picon-512x512-.png.png",
                 badgeText: "POPULAR",
                 badgeColor: "#4CAF50",
                 link: `Product_${topSeller.id}`
@@ -37,7 +37,7 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
                 id: `campaign_${trending.id}`,
                 title: "Trending Now",
                 subtitle: trending.name,
-                imageUrl: trending.imageUrls?.[0] || trending.imageUrl || "/app-picon-512x512-.png",
+                imageUrl: trending.imageUrls?.[0] || trending.imageUrl || "/app-picon-512x512-.png.png",
                 badgeText: "HOT",
                 badgeColor: "#FF5722",
                 link: `Product_${trending.id}`
@@ -50,7 +50,7 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
                 id: `campaign_${newest.id}`,
                 title: "New Arrivals",
                 subtitle: newest.name,
-                imageUrl: newest.imageUrls?.[0] || newest.imageUrl || "/app-picon-512x512-.png",
+                imageUrl: newest.imageUrls?.[0] || newest.imageUrl || "/app-picon-512x512-.png.png",
                 badgeText: "NEW",
                 badgeColor: "#2196F3",
                 link: `Product_${newest.id}`
@@ -110,7 +110,7 @@ export function HomeScreen({ searchQuery, setSearchQuery, onNavigate, products, 
                             {categories.map((cat: any) => (
                                 <div key={cat.id} onClick={() => onNavigate(`Category_${cat.id}`)} className="flex flex-col items-center space-y-2 cursor-pointer min-w-[70px]">
                                     <div className="w-14 h-14 bg-white rounded-full p-2 shadow-sm flex items-center justify-center">
-                                        <img src={cat.imageUrl || "/app-picon-512x512-.png"} alt={cat.name} className="w-full h-full object-contain" />
+                                        <img src={cat.imageUrl || "/app-picon-512x512-.png.png"} alt={cat.name} className="w-full h-full object-contain" />
                                     </div>
                                     <span className="text-xs font-medium text-center">{cat.name}</span>
                                 </div>
@@ -211,7 +211,7 @@ export function CartScreen({ cartItems, setCartItems, incrementCart, decrementCa
                     name: item.product.name,
                     price: item.product.price,
                     quantity: item.quantity,
-                    imageUrl: item.product.imageUrls?.[0] || item.product.imageUrl || item.product.image || "/app-picon-512x512-.png"
+                    imageUrl: item.product.imageUrls?.[0] || item.product.imageUrl || item.product.image || "/app-picon-512x512-.png.png"
                 })),
                 totalPrice: total,
                 deliveryFee: storeSettings?.deliveryFee || 0,
@@ -242,7 +242,7 @@ export function CartScreen({ cartItems, setCartItems, incrementCart, decrementCa
                     <div className="flex-1 overflow-y-auto space-y-4">
                         {cartItems.map((item: any) => (
                             <div key={item.product.id} className="flex items-center space-x-4 border-b border-gray-100 pb-4">
-                                <img src={item.product.imageUrls?.[0] || item.product.imageUrl || "/app-picon-512x512-.png"} className="w-16 h-16 object-contain bg-gray-50 rounded-lg" />
+                                <img src={item.product.imageUrls?.[0] || item.product.imageUrl || "/app-picon-512x512-.png.png"} className="w-16 h-16 object-contain bg-gray-50 rounded-lg" />
                                 <div className="flex-1">
                                     <h3 className="font-bold text-sm">{item.product.name}</h3>
                                     <span className="text-brand-yellow font-bold">₹{item.product.price}</span>
@@ -275,7 +275,7 @@ export function CategoriesScreen({ categories, onNavigate }: any) {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {categories.map((cat: any) => (
                     <div key={cat.id} onClick={() => onNavigate(`Category_${cat.id}`)} className="bg-white rounded-xl shadow-sm p-4 flex flex-col items-center cursor-pointer hover:shadow-md transition">
-                        <img src={cat.imageUrl || "/app-picon-512x512-.png"} className="w-16 h-16 object-contain mb-3" />
+                        <img src={cat.imageUrl || "/app-picon-512x512-.png.png"} className="w-16 h-16 object-contain mb-3" />
                         <h3 className="font-bold text-center text-sm">{cat.name}</h3>
                     </div>
                 ))}
@@ -318,7 +318,7 @@ export function ProductDetailsScreen({ productId, products, onNavigate, incremen
         <div className="bg-white min-h-screen">
             <div className="relative">
                 <button onClick={() => onNavigate("Back")} className="absolute top-4 left-4 z-10 bg-white/80 p-2 rounded-full shadow-md transition-all active:scale-95 hover:opacity-90"><ArrowLeft size={20}/></button>
-                <img src={product.imageUrls?.[0] || product.imageUrl || "/app-picon-512x512-.png"} className="w-full h-[300px] object-contain bg-gray-50" />
+                <img src={product.imageUrls?.[0] || product.imageUrl || "/app-picon-512x512-.png.png"} className="w-full h-[300px] object-contain bg-gray-50" />
             </div>
             <div className="p-6">
                 <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
@@ -376,7 +376,7 @@ export function ProductCard({
   onDecrement,
   onProductClick,
 }: any) {
-  const images = product.imageUrls || product.images || (product.imageUrl || product.image ? [product.imageUrl || product.image] : ["/app-picon-512x512-.png"]);
+  const images = product.imageUrls || product.images || (product.imageUrl || product.image ? [product.imageUrl || product.image] : ["/app-picon-512x512-.png.png"]);
   const extraImagesCount = images.length > 1 ? images.length - 1 : 0;
   return (
     <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-md overflow-hidden flex flex-col h-[200px] md:h-[250px] border border-gray-100 transition-all hover:-translate-y-1 relative">
@@ -391,7 +391,7 @@ export function ProductCard({
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src =
-              "/app-picon-512x512-.png";
+              "/app-picon-512x512-.png.png";
           }}
         />
         {extraImagesCount > 0 && (

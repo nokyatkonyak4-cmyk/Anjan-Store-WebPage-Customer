@@ -58,7 +58,7 @@ messaging.onBackgroundMessage(async (payload) => {
   
   const notificationOptions = {
     body: payload.notification?.body,
-    icon: '/app-picon-512x512-.png',
+    icon: '/app-picon-512x512-.png.png',
     data: {
       url: url
     }

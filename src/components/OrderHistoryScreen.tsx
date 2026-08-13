@@ -143,7 +143,7 @@ export function OrderHistoryScreen({ orders, products, onNavigate }: any) {
                         
                         // Try to find the full product from the database products list to get the image
                         const dbProduct = products?.find((p: any) => p.id === (product.productId || product.id) || p.name === product.name);
-                        const productImage = dbProduct?.imageUrls?.[0] || dbProduct?.images?.[0] || dbProduct?.imageUrl || dbProduct?.image || product.imageUrls?.[0] || product.images?.[0] || product.imageUrl || product.image || item.imageUrls?.[0] || item.images?.[0] || item.imageUrl || item.image || "/app-picon-512x512-.png";
+                        const productImage = dbProduct?.imageUrls?.[0] || dbProduct?.images?.[0] || dbProduct?.imageUrl || dbProduct?.image || product.imageUrls?.[0] || product.images?.[0] || product.imageUrl || product.image || item.imageUrls?.[0] || item.images?.[0] || item.imageUrl || item.image || "/app-picon-512x512-.png.png";
 
                         return (
                             <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-4">

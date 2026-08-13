@@ -503,7 +503,7 @@ export default function MainAppScreen() {
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
               <img
-                src="/app-picon-512x512-.png"
+                src="/app-picon-512x512-.png.png"
                 alt="Logo"
                 className="w-full h-full object-contain"
               />
@@ -555,7 +555,7 @@ export default function MainAppScreen() {
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-3 md:hidden">
               <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden">
-                <img src="/app-picon-512x512-.png" alt="Logo" className="w-full h-full object-contain" />
+                <img src="/app-picon-512x512-.png.png" alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-lg leading-tight">Anjan Store</span>
