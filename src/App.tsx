@@ -84,6 +84,21 @@ function AppRouter() {
       setUser(currentUser);
       setAuthLoading(false);
 
+      if (currentUser && db) {
+        try {
+          const syncData = {
+            email: currentUser.email || "",
+            name: currentUser.displayName || "",
+            profileImage: currentUser.photoURL || "",
+            lastLoginAt: Date.now()
+          };
+          await setDoc(doc(db, "users", currentUser.uid), syncData, { merge: true });
+          await setDoc(doc(db, "customers", currentUser.uid), syncData, { merge: true });
+        } catch (e) {
+          console.warn("Failed to sync user data to Firestore:", e);
+        }
+      }
+
       if (currentUser && messaging && db) {
         if ("Notification" in window) {
           if (Notification.permission === "default") {
@@ -156,7 +171,7 @@ function AppRouter() {
           payload.notification?.title || "Update from Anjan Store";
         const notificationOptions = {
           body: payload.notification?.body || "You have a new message.",
-          icon: "/app-picon-512x512-.png.png",
+          icon: "/app-icon-512X512.png",
           data: payload.data,
         };
 

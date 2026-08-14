@@ -49,6 +49,22 @@ export function OrderHistoryScreen({ orders, products, onNavigate }: any) {
                             feedback: review.feedback || "",
                             createdAtMs: Date.now()
                         });
+                        
+                        // Also write to Android app's "reviews" collection for cross-compatibility
+                        try {
+                            await addDoc(collection(db, "reviews"), {
+                                orderId: reviewOrder.id || "unknown",
+                                productId: productId || "unknown",
+                                customerId: auth.currentUser!.uid || "unknown",
+                                customerName: auth.currentUser!.displayName || auth.currentUser!.email || "Anonymous",
+                                rating: review.rating || 0,
+                                comment: review.feedback || "",
+                                status: "Published",
+                                createdAtMs: Date.now()
+                            });
+                        } catch (err) {
+                            console.warn("Failed to write to root reviews collection (possibly rules)", err);
+                        }
                     } catch (e: any) {
                         throw new Error(`Failed to add productReview for ${productId}: ${e.message}`);
                     }
@@ -143,7 +159,7 @@ export function OrderHistoryScreen({ orders, products, onNavigate }: any) {
                         
                         // Try to find the full product from the database products list to get the image
                         const dbProduct = products?.find((p: any) => p.id === (product.productId || product.id) || p.name === product.name);
-                        const productImage = dbProduct?.imageUrls?.[0] || dbProduct?.images?.[0] || dbProduct?.imageUrl || dbProduct?.image || product.imageUrls?.[0] || product.images?.[0] || product.imageUrl || product.image || item.imageUrls?.[0] || item.images?.[0] || item.imageUrl || item.image || "/app-picon-512x512-.png.png";
+                        const productImage = dbProduct?.imageUrls?.[0] || dbProduct?.images?.[0] || dbProduct?.imageUrl || dbProduct?.image || product.imageUrls?.[0] || product.images?.[0] || product.imageUrl || product.image || item.imageUrls?.[0] || item.images?.[0] || item.imageUrl || item.image || "/app-icon-512X512.png";
 
                         return (
                             <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-4">

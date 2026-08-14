@@ -27,10 +27,9 @@ export default function SplashScreen({ onSplashFinished }: { onSplashFinished: (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#FFC107]">
       {step === 1 ? (
         <img 
-          src="/app-picon-512x512-.png.png" 
+          src="/app-icon-512X512.png" 
           alt="App Logo 1" 
           className="w-[60%] max-w-[250px] h-[60%] max-h-[250px] object-contain transition-all duration-300" 
-          style={{ filter: 'drop-shadow(3px 3px 0 white) drop-shadow(-3px -3px 0 white) drop-shadow(3px -3px 0 white) drop-shadow(-3px 3px 0 white)' }}
         />
       ) : (
         <img 

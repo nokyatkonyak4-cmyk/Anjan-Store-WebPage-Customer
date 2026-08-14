@@ -31,7 +31,7 @@ import {
   Bike,
   Store,
   History,
-  Trash2,
+  Trash2, CheckSquare, Square,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AuthScreen from "./AuthScreen";
@@ -52,6 +52,7 @@ import {
   getDoc,
   orderBy,
   deleteDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import SecondaryBannerSlider, { CampaignSlide } from "./SecondaryBannerSlider";
@@ -70,6 +71,7 @@ export default function MainAppScreen() {
       setNotifications1(updateFn);
       setNotifications2(updateFn);
       setNotifications3(updateFn);
+      setNotifications4(updateFn);
       return;
     }
     if (item.startsWith("optimistic_delete_")) {
@@ -78,6 +80,7 @@ export default function MainAppScreen() {
       setNotifications1(filterFn);
       setNotifications2(filterFn);
       setNotifications3(filterFn);
+      setNotifications4(filterFn);
       return;
     }
     if (item === "Back") {
@@ -118,17 +121,31 @@ export default function MainAppScreen() {
   const [notifications1, setNotifications1] = useState<any[]>([]);
   const [notifications2, setNotifications2] = useState<any[]>([]);
   const [notifications3, setNotifications3] = useState<any[]>([]);
+  const [notifications4, setNotifications4] = useState<any[]>([]);
 
     const notifications = React.useMemo(() => {
-    const all = [...notifications1, ...notifications2, ...notifications3];
-    const uniqueMap = new window.Map();
+    const all = [...notifications1, ...notifications2, ...notifications3, ...notifications4];
+    const contentMap = new window.Map();
+    
     all.forEach(n => {
-      if (!uniqueMap.has(n.id)) uniqueMap.set(n.id, n);
+      // Deduplicate by identical content to prevent multiple identical notifications
+      const contentKey = `${n.title}|${n.message}`;
+      const existing = contentMap.get(contentKey);
+      
+      if (!existing) {
+        contentMap.set(contentKey, n);
+      } else {
+        // If we have a duplicate, keep the one that is newest
+        if ((n.timestamp || 0) > (existing.timestamp || 0)) {
+          contentMap.set(contentKey, n);
+        }
+      }
     });
-    return Array.from(uniqueMap.values()).sort(
+    
+    return Array.from(contentMap.values()).sort(
       (a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0)
     );
-  }, [notifications1, notifications2, notifications3]);
+  }, [notifications1, notifications2, notifications3, notifications4]);
 
   const unreadNotificationsCount = notifications.filter((n: any) => !n.isRead).length;
 
@@ -350,9 +367,10 @@ export default function MainAppScreen() {
 
                 if (alertMsg) {
                     const notifText = alertPin ? `${alertMsg} \nPIN: ${alertPin}` : alertMsg;
-                    const notifRef = doc(collection(db, "users", user.uid, "notifications"));
+                    const deterministicId = `order_${orderId}_${newStatus.replace(/\s+/g, '_')}`;
+                    const notifRef = doc(db, "users", user.uid, "notifications", deterministicId);
                     const notifData = {
-                      id: notifRef.id,
+                      id: deterministicId,
                       title: "Order Update",
                       message: notifText,
                       timestamp: Date.now(),
@@ -408,6 +426,29 @@ export default function MainAppScreen() {
       onSnapshot(query(collection(db, "notifications"), where("customerId", "==", user.uid)), (snapshot) => {
           setNotifications3(snapshot.docs.map(mapNotification));
         }, (error) => { console.warn("Notifications 3 snapshot error:", error.message); }),
+    );
+
+    
+    // Listen to pushNotifications (Global Notifications)
+    unsubs.push(
+      onSnapshot(collection(db, "pushNotifications"), (snapshot) => {
+          setNotifications4(snapshot.docs.map(doc => {
+            const data = doc.data() as any;
+            let ts = data.createdAtMs || data.timestamp || data.createdAt;
+            if (ts && typeof ts.toMillis === "function") ts = ts.toMillis();
+            else if (ts && ts.seconds) ts = ts.seconds * 1000;
+            return {
+              id: doc.id,
+              _path: doc.ref.path,
+              ...data,
+              timestamp: ts,
+              title: data.title || data.type || "Announcement",
+              message: data.message || "",
+              isRead: Array.isArray(data.readBy) ? data.readBy.includes(user.uid) : false,
+              isGlobal: true,
+            };
+          }));
+        }, (error) => { console.warn("Push Notifications snapshot error:", error.message); }),
     );
 
     // User profile data (favorites, address, phone)
@@ -484,12 +525,31 @@ export default function MainAppScreen() {
   const augmentedProducts = React.useMemo(() => {
     return products.map(product => {
       const reviews = productReviews.filter(r => r.productId === product.id);
-      const totalRating = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
-      const averageRating = reviews.length > 0 ? (totalRating / reviews.length) : 0;
+      
+      let averageRating = product.averageRating || product.rating || 0;
+      let reviewCount = product.reviewCount || product.numReviews || product.reviewsCount || 0;
+      
+      if (reviews.length > 0) {
+        const totalRating = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+        
+        // If the product already had some native ratings, we could blend them, 
+        // but it's safer to just use the new ones if they exist, or fallback.
+        // Actually, let's combine them for accuracy if native ratings exist.
+        if (product.reviewCount && product.averageRating) {
+            const combinedTotal = (product.averageRating * product.reviewCount) + totalRating;
+            const combinedCount = product.reviewCount + reviews.length;
+            averageRating = combinedTotal / combinedCount;
+            reviewCount = combinedCount;
+        } else {
+            averageRating = totalRating / reviews.length;
+            reviewCount = reviews.length;
+        }
+      }
+
       return {
         ...product,
         averageRating,
-        reviewCount: reviews.length,
+        reviewCount,
       };
     });
   }, [products, productReviews]);
@@ -503,7 +563,7 @@ export default function MainAppScreen() {
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
               <img
-                src="/app-picon-512x512-.png.png"
+                src="/app-icon-512X512.png"
                 alt="Logo"
                 className="w-full h-full object-contain"
               />
@@ -555,7 +615,7 @@ export default function MainAppScreen() {
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-3 md:hidden">
               <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden">
-                <img src="/app-picon-512x512-.png.png" alt="Logo" className="w-full h-full object-contain" />
+                <img src="/app-icon-512X512.png" alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-lg leading-tight">Anjan Store</span>
@@ -603,7 +663,7 @@ export default function MainAppScreen() {
              {selectedItem === 'Cart' && <CartScreen cartItems={cartItems} setCartItems={setCartItems} incrementCart={incrementCart} decrementCart={decrementCart} onNavigate={handleNavigate} storeSettings={storeSettings} />}
              {selectedItem === 'Categories' && <CategoriesScreen categories={categories} onNavigate={handleNavigate} />}
              {selectedItem === 'Favorites' && <FavoritesScreen favorites={favorites} products={augmentedProducts} onNavigate={handleNavigate} cartItems={cartItems} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
-             {selectedItem.startsWith('Product_') && <ProductDetailsScreen productId={selectedItem.replace('Product_', '')} products={augmentedProducts} onNavigate={handleNavigate} incrementCart={incrementCart} />}
+             {selectedItem.startsWith('Product_') && <ProductDetailsScreen productId={selectedItem.replace('Product_', '')} products={augmentedProducts} productReviews={productReviews} onNavigate={handleNavigate} incrementCart={incrementCart} />}
              {selectedItem.startsWith('Category_') && <CategoryScreen categoryId={selectedItem.replace('Category_', '')} products={augmentedProducts} categories={categories} onNavigate={handleNavigate} cartItems={cartItems} favorites={favorites} toggleFavorite={toggleFavorite} incrementCart={incrementCart} decrementCart={decrementCart} />}
              {selectedItem === 'Profile' && <ProfileScreen savedAddress={savedAddress} savedPhone={savedPhone} profileImage={profileImage} onNavigate={handleNavigate} />}
              {selectedItem === 'Notifications' && <NotificationsScreen notifications={notifications} onNavigate={handleNavigate} />}
@@ -633,28 +693,106 @@ export default function MainAppScreen() {
 }
 
 function NotificationsScreen({ notifications, onNavigate }: any) {
+    const [selectedNotifs, setSelectedNotifs] = useState<Set<string>>(new Set());
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleNotificationClick = async (notif: any) => {
+        if (isSelectionMode) {
+            toggleSelection(notif.id);
+            return;
+        }
         if (!notif.isRead) {
             onNavigate("optimistic_read_" + notif.id);
             try {
-                await updateDoc(doc(db, "notifications", notif.id), { isRead: true });
+                if (notif.isGlobal) {
+                    await updateDoc(doc(db, "pushNotifications", notif.id), {
+                        readBy: arrayUnion(auth.currentUser?.uid)
+                    });
+                } else if (notif._path) {
+                    await updateDoc(doc(db, notif._path), { isRead: true });
+                } else {
+                    await updateDoc(doc(db, "notifications", notif.id), { isRead: true });
+                }
             } catch (error) {
                 console.error("Error updating notification", error);
             }
         }
     };
-    
+
+    const toggleSelection = (id: string) => {
+        const newSet = new Set(selectedNotifs);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+            setIsSelectionMode(true);
+        }
+        setSelectedNotifs(newSet);
+        if (newSet.size === 0) setIsSelectionMode(false);
+    };
+
+    const handleSelectAll = () => {
+        if (selectedNotifs.size === notifications?.length) {
+            setSelectedNotifs(new Set());
+            setIsSelectionMode(false);
+        } else {
+            const allIds = (notifications || []).map((n: any) => n.id);
+            setSelectedNotifs(new Set(allIds));
+            setIsSelectionMode(true);
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedNotifs.size === 0) return;
+        setIsDeleting(true);
+        
+        const idsToDelete = Array.from(selectedNotifs);
+        let successCount = 0;
+        
+        await Promise.all(idsToDelete.map(async (id) => {
+            const notif = notifications?.find((n: any) => n.id === id);
+            onNavigate("optimistic_delete_" + id);
+            try {
+                if (notif?.isGlobal) {
+                    // Admins might delete global notifications, but typical users just hide them locally or we ignore deletion.
+                    // If your security rules block it, it will just fail gracefully.
+                    await deleteDoc(doc(db, "pushNotifications", id));
+                } else if (notif?._path) {
+                    await deleteDoc(doc(db, notif._path));
+                } else {
+                    await deleteDoc(doc(db, "notifications", id));
+                }
+                successCount++;
+            } catch (error) {
+                console.warn("Error deleting notification", error);
+            }
+        }));
+        
+        setSelectedNotifs(new Set());
+        setIsSelectionMode(false);
+        setIsDeleting(false);
+        if (successCount > 0) toast.success(`Deleted ${successCount} notification${successCount > 1 ? 's' : ''}`);
+    };
+
     const handleDeleteNotification = async (notif: any, e: any) => {
         e.stopPropagation();
         onNavigate("optimistic_delete_" + notif.id);
         try {
-            await deleteDoc(doc(db, "notifications", notif.id));
+            if (notif.isGlobal) {
+                await deleteDoc(doc(db, "pushNotifications", notif.id));
+            } else if (notif._path) {
+                await deleteDoc(doc(db, notif._path));
+            } else {
+                await deleteDoc(doc(db, "notifications", notif.id));
+            }
             toast.success("Notification deleted");
         } catch (error) {
-            console.error("Error deleting notification", error);
+            console.warn("Error deleting notification", error);
+            toast.error("Failed to delete notification");
         }
     };
-    
+
     return (
         <div className="flex flex-col h-full bg-white animate-fade-in p-4">
             <div className="flex justify-between items-center mb-6">
@@ -662,89 +800,153 @@ function NotificationsScreen({ notifications, onNavigate }: any) {
                     <ArrowLeft size={24} className="text-dark-bg mr-3" />
                     <h2 className="text-xl font-bold text-dark-bg">Notifications</h2>
                 </div>
-                <button 
-                  onClick={async () => {
-                     try {
-                        toast("Requesting notification permission...");
-                        if ("Notification" in window) {
-                           const perm = await Notification.requestPermission();
-                           if (perm === "granted" && (window as any).requestFCMToken) {
-                              const success = await (window as any).requestFCMToken();
-                              if (success) toast.success("Push Notifications Enabled!");
-                              else toast.error("Failed to get push token. Please make sure you are in a new tab.");
-                           } else if (perm === "granted") {
-                              toast.success("Permission granted. Please refresh to receive notifications.");
-                           } else {
-                              toast.error(
-                                "Push notifications cannot be enabled inside this embedded preview (Permission: " + perm + "). \n\nPlease click the \"Open in new tab\" icon at the top right of the screen to enable push notifications.",
-                                { duration: 6000 }
-                              );
-                           }
-                        } else {
-                           toast.error("Push notifications are not supported in this browser.");
-                        }
-                     } catch (e: any) {
-                        console.error(e);
-                        toast.error("Error: " + (e.message || "Unknown error"));
-                     }
-                  }}
-                  className="bg-brand-yellow text-dark-bg px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm active:scale-95 hover:opacity-90 transition-all"
-                >
-                   Enable Push
-                </button>
+                {!isSelectionMode ? (
+                    <button 
+                      onClick={async () => {
+                         try {
+                            toast("Requesting notification permission...");
+                            if ("Notification" in window) {
+                               const perm = await Notification.requestPermission();
+                               if (perm === "granted" && (window as any).requestFCMToken) {
+                                  const success = await (window as any).requestFCMToken();
+                                  if (success) toast.success("Push Notifications Enabled!");
+                                  else toast.error("Failed to get push token. Please make sure you are in a new tab.");
+                               } else if (perm === "granted") {
+                                  toast.success("Permission granted. Please refresh to receive notifications.");
+                               } else {
+                                  toast.error(
+                                    "Push notifications cannot be enabled inside this embedded preview (Permission: " + perm + "). \n\nPlease click the \"Open in new tab\" icon at the top right of the screen to enable push notifications.",
+                                    { duration: 6000 }
+                                  );
+                               }
+                            } else {
+                               toast.error("Push notifications are not supported in this browser.");
+                            }
+                         } catch (e: any) {
+                            console.error(e);
+                            toast.error("Error: " + (e.message || "Unknown error"));
+                         }
+                      }}
+                      className="bg-brand-yellow text-dark-bg px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm active:scale-95 hover:opacity-90 transition-all"
+                    >
+                       Enable Push
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleDeleteSelected}
+                        disabled={isDeleting}
+                        className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm active:scale-95 hover:bg-red-600 transition-all flex items-center gap-1 disabled:opacity-50"
+                    >
+                        {isDeleting ? "Deleting..." : `Delete (${selectedNotifs.size})`}
+                    </button>
+                )}
             </div>
 
-      
-      {notifications?.length > 20 && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm flex flex-col gap-1 animate-pulse">
-            <span className="font-bold flex items-center gap-2"><Info size={16} /> Storage limit approaching</span>
-            <span>You have more than 20 notifications. Please delete older notifications to save space.</span>
-        </div>
-      )}
-
-      {!notifications || notifications.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-gray-400 mt-20">
-          No new notifications
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {notifications.map((notif: any, index: number) => (
-            <div
-              key={`${notif.id}-${index}`}
-              onClick={() => handleNotificationClick(notif)}
-              className={`p-4 rounded-xl border cursor-pointer transition-colors ${notif.isRead ? "bg-white border-gray-100" : "bg-[#FFF9E6] border-yellow-200 hover:bg-yellow-50"}`}
-            >
-              <div className="flex justify-between items-start mb-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-dark-bg text-sm">
-                    {notif.title}
-                  </h4>
-                  {!notif.isRead && (
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                  )}
+            {notifications?.length > 0 && (
+                <div className="flex justify-between items-center mb-4">
+                    <button 
+                        onClick={handleSelectAll}
+                        className="flex items-center gap-2 text-sm text-gray-600 font-bold hover:text-dark-bg transition-colors"
+                    >
+                        {selectedNotifs.size === notifications.length ? (
+                            <CheckSquare size={18} className="text-brand-yellow" />
+                        ) : (
+                            <Square size={18} />
+                        )}
+                        <span>Select All</span>
+                    </button>
+                    {selectedNotifs.size > 0 && (
+                        <button 
+                            onClick={() => {
+                                setSelectedNotifs(new Set());
+                                setIsSelectionMode(false);
+                            }}
+                            className="text-xs text-gray-400 hover:text-gray-600 font-bold"
+                        >
+                            Cancel
+                        </button>
+                    )}
                 </div>
-                <button 
-                  onClick={(e) => handleDeleteNotification(notif, e)} 
-                  className="text-gray-400 hover:text-red-500 p-1 -mt-1 -mr-1 rounded-md transition-colors"
-                  aria-label="Delete notification"
-                >
-                   <Trash2 size={16} />
-                </button>
-              </div>
-              <p className="text-xs text-gray-600 leading-relaxed mb-2">
-                {notif.message}
-              </p>
-              {notif.timestamp ? (
-                <span className="text-[10px] text-gray-400">
-                  {new Date(notif.timestamp).toLocaleString()}
-                </span>
-              ) : null}
-            </div>
-          ))}
+            )}
+
+            {notifications?.length > 20 && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm flex flex-col gap-1 animate-pulse">
+                    <span className="font-bold flex items-center gap-2"><Info size={16} /> Storage limit approaching</span>
+                    <span>You have more than 20 notifications. Please delete older notifications to save space.</span>
+                </div>
+            )}
+
+            {!notifications || notifications.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center text-gray-400 mt-20">
+                  No new notifications
+                </div>
+            ) : (
+                <div className="space-y-3 pb-6">
+                  {notifications.map((notif: any, index: number) => {
+                      const isSelected = selectedNotifs.has(notif.id);
+                      return (
+                        <div
+                          key={`${notif.id}-${index}`}
+                          onClick={() => handleNotificationClick(notif)}
+                          onContextMenu={(e) => {
+                              e.preventDefault();
+                              if (!isSelectionMode) {
+                                  toggleSelection(notif.id);
+                              }
+                          }}
+                          className={`p-4 rounded-xl border cursor-pointer transition-colors ${
+                              isSelected 
+                                ? "bg-brand-yellow/10 border-brand-yellow" 
+                                : notif.isRead 
+                                    ? "bg-white border-gray-100" 
+                                    : "bg-[#FFF9E6] border-yellow-200 hover:bg-yellow-50"
+                          } flex gap-3`}
+                        >
+                          {(isSelectionMode || isSelected) && (
+                              <div className="flex items-center pt-1" onClick={(e) => { e.stopPropagation(); toggleSelection(notif.id); }}>
+                                  {isSelected ? (
+                                      <CheckSquare size={18} className="text-brand-yellow" />
+                                  ) : (
+                                      <Square size={18} className="text-gray-300" />
+                                  )}
+                              </div>
+                          )}
+                          <div className="flex-1">
+                              <div className="flex justify-between items-start mb-1">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-bold text-dark-bg text-sm">
+                                    {notif.title}
+                                  </h4>
+                                  {!notif.isRead && !isSelected && (
+                                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                  )}
+                                </div>
+                                {!isSelectionMode && (
+                                    <button 
+                                       onClick={(e) => handleDeleteNotification(notif, e)}
+                                       className="text-gray-400 hover:text-red-500 p-1 -mt-1 -mr-1 rounded-md transition-colors"
+                                      aria-label="Delete notification"
+                                    >
+                                       <Trash2 size={16} />
+                                    </button>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-600 leading-relaxed mb-2">
+                                {notif.message}
+                              </p>
+                              {notif.timestamp ? (
+                                <span className="text-[10px] text-gray-400">
+                                  {new Date(notif.timestamp).toLocaleString()}
+                                </span>
+                              ) : null}
+                          </div>
+                        </div>
+                    );
+                  })}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }
 
 function ProfileScreen({
